@@ -1,11 +1,13 @@
 # Aerial 架构
 
-Android 应用（`app/`），Kotlin + Jetpack Compose（没有用 androidx.tv 和 Material，全部自绘）。包名 `app.orchard.tv`（产品名是 Aerial，包名沿用旧名 Orchard：改包名会让电视把它当成新 App，丢掉户主数据和全部授权），minSdk 21（Android 5.0），targetSdk 34，compileSdk 36。Compose 固定在 1.9.x（BOM 2025.11.01）：1.10 起要求 Android 6.0。比 Android 5.0 新的接口都要按 `Build.VERSION.SDK_INT` 判断，`./gradlew lintStandardRelease` 的 NewApi 检查能找出漏掉的地方。Android 4.0–4.4 的电视用另一个模块 `lite/`（Aerial Lite，原生 View，minSdk 14），见 `docs/LITE.md`。
+Android 应用（`core/`），Kotlin + Jetpack Compose（没有用 androidx.tv 和 Material，全部自绘）。日用包名 `app.nookscreen.tv`，源码命名空间 `app.orchard.tv`，minSdk 21（Android 5.0），targetSdk 34，compileSdk 36。Compose 固定在 1.9.x（BOM 2025.11.01）：1.10 起要求 Android 6.0。比 Android 5.0 新的接口都要按 `Build.VERSION.SDK_INT` 判断，`./gradlew lintStandardRelease` 的 NewApi 检查能找出漏掉的地方。Android 4.0–4.4 的电视用另一个模块 `lite/`（Aerial Lite，原生 View，minSdk 14），见 `docs/LITE.md`。
+
+Core 和独立插件的边界、包格式与生命周期见 [插件指南](PLUGINS.md)。
 
 ## 目录一览
 
 ```
-app/src/main/java/app/orchard/tv/
+core/src/main/java/app/orchard/tv/
 ├── MainActivity.kt          HOME Activity：窗口设置、960×540 画布密度、广播/网络监听、空闲计时与桌面内屏保、启动 App
 ├── HomeViewModel.kt         首页状态：App 列表、浮层（Overlay）、系统状态（网络/音量/亮度/信号源/桌面状态）、移动模式
 ├── apps/
@@ -61,9 +63,9 @@ app/src/main/java/app/orchard/tv/
 │   └── ConfigReceiver.kt    ADB 专用配置入口（keep_adb、own_screensaver、clear_pin、kids_off、kids_used_minutes、kids_continuous_minutes、export_tiles、check_update、update_test、update_test_self、self_compile、device_profile、list_sources、open_source），要求发送方持有 WRITE_SECURE_SETTINGS；被厂商的启动管理停用时（海信 V3K_PRO，广播返回 `result=0` 却没生效），`GuardSetup.ensureEnabled` 把它和 BootReceiver 一起恢复（PR #1112）
 └── dream/AerialDream.kt    系统级屏保（DreamService + Compose）
 
-app/src/main/assets/aerials.json   Apple 航拍目录（114 条：地址 + 中英文地名 + 时间点说明）
-app/src/main/assets/web/index.html 手机配置页（单文件，iOS 风格，深浅色）
-app/src/standard/AndroidManifest.xml  只给 standard 版本加 HOME intent-filter
+core/src/main/assets/aerials.json   Apple 航拍目录（114 条：地址 + 中英文地名 + 时间点说明）
+core/src/main/assets/web/index.html 手机配置页（单文件，iOS 风格，深浅色）
+core/src/standard/AndroidManifest.xml  只给 standard 版本加 HOME intent-filter
 tools/install.sh / restore.sh       部署与还原
 tools/report.sh                     收集机型适配信息（只读），输出贴进 issue 的 Markdown
 site/update/                        电视升级页二维码打开的页面：这台电视的安装命令和 Agent 提示词
@@ -113,7 +115,7 @@ site/update/                        电视升级页二维码打开的页面：�
 - **逐层诊断**：`ConfigReceiver --es skip_layers …`（`ui/components/DiagLayers.kt`）让首页的某几层不画，用来在慢电视上找出最贵的那一层；`Frames` 行在 Android 12+ 带 GPU 时间。
 - **不透明面板下面不要画**：个性化面板完全滑入后（`WallpaperSheet` 的 `onSettled`），首页和暗幕只画到 `SheetCovers`（面板高度减去顶部圆角）为止。以前面板下面每帧都在画壁纸、压暗、底板、磁贴和暗幕，过度绘制 4 层以上：小米个性化 GPU 40 → 12 ms，中位 90 → 38 ms。Lite 同样处理（`HomeView.coveredBelow`）。
 - 一定要装 release 版，并执行 `cmd package compile -m speed -f app.orchard.tv`。debug 版的 Compose 在电视上明显卡顿。**要在 Aerial 启动过一次之后再编译**：小米 MFTR0（Android 14）把 `speed` 当成 `speed-profile`，装完立刻编译时还没有 profile，结果还是 `verify`（解释执行）。`install.sh` 已经改成先启动、等 5 秒再编译；2026-11-03 起在 Android 9 及以上直接连同 APK 自带的 .dm 一起装（`install-multiple`），安装时就编译好，等 5 秒那次编译只是给没装上 .dm 的电视兜底（5 秒时 profile 常常还是空的）。
-- **Baseline Profile**（`app/src/main/baseline-prof.txt`）：Aerial 自己的代码和 Compose 全部标成热点。不经过 `install.sh` 的安装（控制中心升级、多屏互动推送、U 盘）不会立刻编译，系统要等后台编译任务（空闲且充电时）才按它编译；小米上实测不会在安装时用 APK 里的 profile（`assets/dexopt/` 和 `assets/art-profile/` 都试过）。编译前后：首页磁贴出来 0.8 秒 → 0.4 秒。诊断报告的 `Compiled` 一行：Android 9+（11 除外）显示 profile 状态，`odex` 大小在所有版本上都能看出编译了没有（只 verify 时几百 KB，`speed` 时约 11 MB）。
+- **Baseline Profile**（`core/src/main/baseline-prof.txt`）：Aerial 自己的代码和 Compose 全部标成热点。不经过 `install.sh` 的安装（控制中心升级、多屏互动推送、U 盘）不会立刻编译，系统要等后台编译任务（空闲且充电时）才按它编译；小米上实测不会在安装时用 APK 里的 profile（`assets/dexopt/` 和 `assets/art-profile/` 都试过）。编译前后：首页磁贴出来 0.8 秒 → 0.4 秒。诊断报告的 `Compiled` 一行：Android 9+（11 除外）显示 profile 状态，`odex` 大小在所有版本上都能看出编译了没有（只 verify 时几百 KB，`speed` 时约 11 MB）。
 - **冷启动不在主线程做的事**：App 列表和信号源同时查（`HomeViewModel.reload`）；磁贴面（连续圆角 + 描边的位图）由 `TileFaces.prepare` 在后台按 5 个一批做，做好前磁贴先画原图（图层的圆角裁剪已经很接近），以前第一次绘制时整页一起在主线程做，小米上约 120 ms；第一排的聚焦尺寸随后也在后台做；字体（Inter 和系统的后备字体链）由 `FontWarmup` 在 `onCreate` 时在后台加载，以前第一次量文字时在主线程做，58 ms → 4 ms。DiagLog 的 `apps in` 一行把耗时拆成 wait / queries / tiles / main。
 - **冷启动只先读前几排的磁贴**：磁贴缓存是每个 App 一个文件（PNG），52 个 App 共 23 MB 像素，TCL MT5879 上解码要 4 个线程合计 1.4–1.9 秒 CPU，墙钟 500–680 ms（改存压缩的原始像素只省约 10%，文件大 1.7 倍，没采用）。现在冷启动只把按保存顺序的前 13 个磁贴（文件夹算一个，读它里面的 App）整张读出来（`LayoutStore.leading`），其余只读文件开头的名字和颜色，先画成纯色占位（`TileArt.placeholder`，在屏幕外），首页出来后紧接着在后台全读（DiagLog「N more tiles in … ms」）。占位个数要从这次加载自己的列表里数：冷启动后按主页键，守护会再起一个 MainActivity，两个首页同时加载，起初把个数记在 `AppCatalog` 里，另一个首页的第二遍把它清零，这个首页就不补读，占位一直留在网格里（小米 MFTR0 上 3 次复现 2 次，改后 4 次都正常）。新装、升级后第一次启动（缓存键不匹配）照旧全读。TCL：tiles 约 530 → 165 ms，首页出来 688–790 → 360–600 ms（多数约 370 ms）。
 - **控制中心预热**：每个进程一次，首页空闲 3 秒后把面板以 1% 不透明度画 3 帧、不拿焦点（`HomeScreen` 的 `ccWarm`），第一次打开就不再是第一次绘制。小米第一次打开帧耗时中位数 58 → 33 ms（最慢 95 → 38）；TCL 82 → 14–28 ms（最慢 309 → 36–67）。

@@ -253,7 +253,7 @@ build() {
     local task="assemble$(tr '[:lower:]' '[:upper:]' <<< "${flavor:0:1}")${flavor:1}Release"
     # build runs in a command substitution, where bash may clear errexit.
     ./gradlew -q --console=plain "$task" || return $?
-    echo "app/build/outputs/apk/$flavor/release/app-$flavor-release.apk"
+    echo "core/build/outputs/apk/$flavor/release/core-$flavor-release.apk"
   else
     download_apk "$flavor"
   fi

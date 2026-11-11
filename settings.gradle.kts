@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "NookScreen"
-include(":app")
+include(":core", ":plugin-api", ":plugins:themes", ":plugins:clock")
 include(":lite")

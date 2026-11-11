@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:label="NookScreen Clock" android:theme="@android:style/Theme.Material.NoActionBar" android:allowBackup="false">
+        <activity android:name=".ClockActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="app.nookscreen.plugin.OPEN_FEATURE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data android:name="app.nookscreen.plugin.MIN_API" android:value="1" />
+            <meta-data android:name="app.nookscreen.plugin.MAX_API" android:value="1" />
+        </activity>
+    </application>
+</manifest>

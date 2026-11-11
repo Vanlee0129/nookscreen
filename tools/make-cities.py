@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Builds app/src/main/assets/cities-cn.tsv, the places the phone page's city box finds by their
+"""Builds core/src/main/assets/cities-cn.tsv, the places the phone page's city box finds by their
 Chinese name. Open-Meteo's geocoder knows few Chinese names: 商丘 and 泉州 found nothing, and 安庆
 found a village in Jiangsu instead of the city in Anhui (issue #187).
 
@@ -22,7 +22,7 @@ import sys
 from collections import Counter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "app/src/main/assets/cities-cn.tsv")
+OUT = os.path.join(ROOT, "core/src/main/assets/cities-cn.tsv")
 RANK = {"PPLC": 0, "PPLA": 0, "PPLA2": 1, "PPLA3": 2, "ADM3": 3}
 # Prefecture cities GeoNames codes as a plain place (PPL), not as a seat: 锦州, 大连, 潍坊, 烟台,
 # 扬州 and others were missing, so typing 锦州 found nothing (issue #1367). Above this population a

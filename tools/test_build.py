@@ -16,7 +16,7 @@ class BuildFailureTest(unittest.TestCase):
             script = root/'tools/install.sh'
             script.write_bytes(SCRIPT.read_bytes())
             apk = ('lite/build/outputs/apk/release/lite-release.apk' if flavor == 'lite' else
-                   'app/build/outputs/apk/{0}/release/app-{0}-release.apk'.format(flavor))
+                   'core/build/outputs/apk/{0}/release/core-{0}-release.apk'.format(flavor))
             artifact = root/apk
             artifact.parent.mkdir(parents=True)
             artifact.write_bytes(b'old artifact')

@@ -24,7 +24,7 @@ Open **Control Center → Desktop scenes** and duplicate the current layout. Set
 
 ## Themes
 
-Open **Control Center → Themes** to preview Sanrio Strawberry Picnic, Marvel Comic Universe, or Classic. A theme applies the matching wallpaper and app artwork. Each desktop scene remembers its theme.
+Open **Control Center → Themes → Plugins** to install Sanrio or Marvel, or import a theme ZIP. Return to Themes to preview and apply it. The phone setup page also supports uploading, applying and removing theme ZIPs under **More → Plugins**. Each scene remembers its appearance.
 
 To make a custom theme, choose a base pack and wallpaper, then select **Save current appearance**. Open Wallpaper and Personalization, scan the setup code, and upload per-app artwork to your theme. Saved themes can be reused across scenes.
 
@@ -42,6 +42,6 @@ Open **Control Center → NookScreen** to check for releases. On Android 12 and 
 
 ## Development and feedback
 
-Use JDK 17 and Android SDK 36, then run `./gradlew :app:assembleDailyRelease`. See the [release guide](docs/RELEASE.md). When opening an issue, include the TV model, Android version, and steps to reproduce.
+Use JDK 17 and Android SDK 36, then run `./gradlew :core:assembleDailyRelease`. Build theme ZIPs independently with `./gradlew :plugins:themes:assemble`. The Core, plugin API, themes and Clock example live in `core/`, `plugin-api/`, `plugins/themes/` and `plugins/clock/`. See the [plugin guide](docs/PLUGINS.md) and [release guide](docs/RELEASE.md). When opening an issue, include the TV model, Android version, and steps to reproduce.
 
 Released under the [MIT license](LICENSE).

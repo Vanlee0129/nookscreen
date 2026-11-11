@@ -16,8 +16,8 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ART = os.path.join(ROOT, "docs/brand/banner-art.svg")
 ICON = os.path.join(ROOT, "docs/brand/icon.svg")
-FONT = os.path.join(ROOT, "app/src/main/res/font/inter.ttf")
-RES = os.path.join(ROOT, "app/src/main/res")
+FONT = os.path.join(ROOT, "core/src/main/res/font/inter.ttf")
+RES = os.path.join(ROOT, "core/src/main/res")
 
 
 def banner(scale):
