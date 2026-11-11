@@ -366,4 +366,31 @@
     <string name="plugin_incompatible_short">Несумісний</string>
     <string name="plugin_unavailable">Випуск теми поки недоступний.</string>
     <string name="plugin_failed">Не вдалося виконати операцію.</string>
+
+    <string name="self_check_title">Перевірка телевізора</string>
+    <string name="self_check_picture">Перевірка екрана</string>
+    <string name="self_check_picture_hint">Перемикайте тестові зображення кнопками «Ліворуч» і «Праворуч». Для виходу натисніть «Назад».</string>
+    <string name="self_check_remote">Перевірка пульта</string>
+    <string name="self_check_remote_hint">Показує, які кнопки отримує NookScreen.</string>
+    <string name="self_check_remote_waiting">Натисніть кнопку на пульті.</string>
+    <string name="self_check_remote_key">Остання кнопка: %1$s (%2$d)</string>
+    <string name="self_check_remote_repeat">Повтори під час утримання: %d</string>
+    <string name="self_check_remote_reserved">Для виходу натисніть «Назад». Кнопки «Додому» й живлення може обробляти сам телевізор.</string>
+    <string name="self_check_network">Перевірка мережі</string>
+    <string name="self_check_network_type">З’єднання: %s</string>
+    <string name="self_check_network_qr">QR-код для перевірки з’єднання з телефона</string>
+    <string name="self_check_network_preparing">Підготовка перевірки з’єднання…</string>
+    <string name="self_check_network_no_address">Локальну адресу не знайдено. Підключіть телевізор до мережі й відкрийте цю сторінку знову.</string>
+    <string name="self_check_network_scan">Підключіть телефон до тієї самої мережі та відскануйте код.</string>
+    <string name="self_check_network_reached">З’єднання підтверджено. Браузер підключився до телевізора.</string>
+    <string name="self_check_diagnostics">Щоб скопіювати звіт, відкрийте розділ зворотного зв’язку на сторінці для телефона.</string>
+    <string-array name="self_check_patterns">
+        <item>Чорний</item>
+        <item>Білий</item>
+        <item>Червоний</item>
+        <item>Зелений</item>
+        <item>Синій</item>
+        <item>Відтінки сірого</item>
+        <item>Межі екрана</item>
+    </string-array>
 </resources>

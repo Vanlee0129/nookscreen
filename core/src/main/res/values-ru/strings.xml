@@ -366,4 +366,31 @@
     <string name="plugin_incompatible_short">Несовместим</string>
     <string name="plugin_unavailable">Выпуск темы пока недоступен.</string>
     <string name="plugin_failed">Не удалось выполнить операцию.</string>
+
+    <string name="self_check_title">Проверка телевизора</string>
+    <string name="self_check_picture">Проверка экрана</string>
+    <string name="self_check_picture_hint">Меняйте тестовые изображения кнопками «Влево» и «Вправо». Для выхода нажмите «Назад».</string>
+    <string name="self_check_remote">Проверка пульта</string>
+    <string name="self_check_remote_hint">Показывает, какие кнопки получает NookScreen.</string>
+    <string name="self_check_remote_waiting">Нажмите любую кнопку на пульте.</string>
+    <string name="self_check_remote_key">Последняя кнопка: %1$s (%2$d)</string>
+    <string name="self_check_remote_repeat">Повторы при удержании: %d</string>
+    <string name="self_check_remote_reserved">Для выхода нажмите «Назад». Кнопки «Домой» и «Питание» может обрабатывать сам телевизор.</string>
+    <string name="self_check_network">Проверка сети</string>
+    <string name="self_check_network_type">Подключение: %s</string>
+    <string name="self_check_network_qr">QR-код для проверки подключения с телефона</string>
+    <string name="self_check_network_preparing">Подготовка проверки подключения…</string>
+    <string name="self_check_network_no_address">Локальный адрес не найден. Подключите телевизор к сети и снова откройте эту страницу.</string>
+    <string name="self_check_network_scan">Подключите телефон к той же сети и отсканируйте код.</string>
+    <string name="self_check_network_reached">Подключение подтверждено. Браузер смог связаться с телевизором.</string>
+    <string name="self_check_diagnostics">Чтобы скопировать отчёт, откройте раздел обратной связи на странице для телефона.</string>
+    <string-array name="self_check_patterns">
+        <item>Чёрный</item>
+        <item>Белый</item>
+        <item>Красный</item>
+        <item>Зелёный</item>
+        <item>Синий</item>
+        <item>Оттенки серого</item>
+        <item>Границы экрана</item>
+    </string-array>
 </resources>

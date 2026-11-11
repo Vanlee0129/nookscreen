@@ -26,6 +26,7 @@
 | Set up Home from your phone | Connect the TV and phone to the same local network and scan the code under **Wallpaper and personalization**. Upload photos and videos, change app artwork, drag to reorder tiles or choose a weather city. |
 | Set a screensaver | Under **Wallpaper and personalization → Screensaver**, choose a clock, photos, aerial footage or [your own video](docs/SCREENSAVER_VIDEOS.md), then set the idle time. |
 | Set up the TV for children or older adults | Open **Kids and Elders** in personalization settings and choose which apps to show. Kids Mode also supports daily time limits and scheduled breaks. |
+| Check the picture, remote or network | Open **Control Center → TV self-check**. Inspect the picture with solid colors, grayscale and edge markers, see which buttons reach NookScreen, or scan a code to check the local connection. The phone page lets you copy a diagnostic report under **Report an Issue**. |
 
 Each scene keeps its own app order, folders, hidden apps, favorite inputs and appearance. Switching scenes switches those settings together. NookScreen restores the last active scene after a restart.
 

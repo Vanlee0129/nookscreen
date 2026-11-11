@@ -66,6 +66,7 @@ private const val POLL_QUIET_MS = 400L
 sealed interface Overlay {
     data object None : Overlay
     data class ControlCenter(val page: CcPage = CcPage.Main) : Overlay
+    data class SelfCheck(val test: SelfCheckTest) : Overlay
     /** [inFolder]: the menu was opened inside that folder, and closes back to it. */
     data class AppMenu(val key: String, val anchor: Rect, val inFolder: String? = null) : Overlay
     data class Folder(val id: String) : Overlay
@@ -76,7 +77,9 @@ sealed interface Overlay {
     data object Kids : Overlay
 }
 
-enum class CcPage { Main, Inputs, InputSettings, Scenes, SceneEdit, SceneSources, Themes, ThemeManage, Plugins, Update, Setup }
+enum class CcPage { Main, Inputs, InputSettings, Scenes, SceneEdit, SceneSources, Themes, ThemeManage, Plugins, Update, Setup, SelfCheck, NetworkCheck }
+
+enum class SelfCheckTest { Picture, Remote }
 
 /**
  * Tiles a cold start reads whole before showing Home (two rows and a half, as many as can show);

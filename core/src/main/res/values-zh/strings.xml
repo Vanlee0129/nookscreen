@@ -373,4 +373,31 @@
     <string name="plugin_incompatible_short">不兼容</string>
     <string name="plugin_unavailable">这套主题暂时无法下载。</string>
     <string name="plugin_failed">操作失败，请重试。</string>
+
+    <string name="self_check_title">电视自检</string>
+    <string name="self_check_picture">画面测试</string>
+    <string name="self_check_picture_hint">按左键或右键切换测试画面，按返回键退出。</string>
+    <string name="self_check_remote">遥控器按键测试</string>
+    <string name="self_check_remote_hint">查看栖屏实际收到的按键。</string>
+    <string name="self_check_remote_waiting">按一下遥控器上的键。</string>
+    <string name="self_check_remote_key">上一次按键：%1$s（%2$d）</string>
+    <string name="self_check_remote_repeat">长按重复次数：%d</string>
+    <string name="self_check_remote_reserved">按返回键退出。主页键、电源键等可能由电视系统处理。</string>
+    <string name="self_check_network">网络检查</string>
+    <string name="self_check_network_type">当前连接：%s</string>
+    <string name="self_check_network_qr">手机连接测试二维码</string>
+    <string name="self_check_network_preparing">正在准备连接测试…</string>
+    <string name="self_check_network_no_address">找不到局域网地址。请先让电视联网，再重新打开本页。</string>
+    <string name="self_check_network_scan">让手机和电视连到同一网络，再用手机扫码测试。</string>
+    <string name="self_check_network_reached">连接成功。浏览器可以访问这台电视。</string>
+    <string name="self_check_diagnostics">要复制诊断报告，请在手机页面打开「反馈问题」。</string>
+    <string-array name="self_check_patterns">
+        <item>黑色</item>
+        <item>白色</item>
+        <item>红色</item>
+        <item>绿色</item>
+        <item>蓝色</item>
+        <item>灰阶</item>
+        <item>屏幕边缘</item>
+    </string-array>
 </resources>

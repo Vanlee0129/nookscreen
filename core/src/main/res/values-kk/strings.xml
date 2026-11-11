@@ -366,4 +366,31 @@
     <string name="plugin_incompatible_short">Үйлесімсіз</string>
     <string name="plugin_unavailable">Тақырып шығарылымы әлі қолжетімді емес.</string>
     <string name="plugin_failed">Плагин әрекеті орындалмады.</string>
+
+    <string name="self_check_title">Теледидарды тексеру</string>
+    <string name="self_check_picture">Экранды тексеру</string>
+    <string name="self_check_picture_hint">Сынақ кескіндерін сол және оң түймелермен ауыстырыңыз. Шығу үшін «Артқа» түймесін басыңыз.</string>
+    <string name="self_check_remote">Пультті тексеру</string>
+    <string name="self_check_remote_hint">NookScreen қабылдаған түймелерді көрсетеді.</string>
+    <string name="self_check_remote_waiting">Пульттегі түймені басыңыз.</string>
+    <string name="self_check_remote_key">Соңғы түйме: %1$s (%2$d)</string>
+    <string name="self_check_remote_repeat">Басып тұрғанда қайталануы: %d</string>
+    <string name="self_check_remote_reserved">Шығу үшін «Артқа» түймесін басыңыз. Басты экран мен қуат түймелерін теледидардың өзі өңдеуі мүмкін.</string>
+    <string name="self_check_network">Желіні тексеру</string>
+    <string name="self_check_network_type">Қосылым: %s</string>
+    <string name="self_check_network_qr">Телефон қосылымын тексеруге арналған QR коды</string>
+    <string name="self_check_network_preparing">Қосылымды тексеруге дайындалып жатыр…</string>
+    <string name="self_check_network_no_address">Жергілікті мекенжай табылмады. Теледидарды желіге қосып, осы бетті қайта ашыңыз.</string>
+    <string name="self_check_network_scan">Телефонды сол желіге қосып, кодты сканерлеңіз.</string>
+    <string name="self_check_network_reached">Қосылым расталды. Браузер теледидарға қосылды.</string>
+    <string name="self_check_diagnostics">Диагностикалық есепті көшіру үшін телефон бетіндегі кері байланыс бөлімін ашыңыз.</string>
+    <string-array name="self_check_patterns">
+        <item>Қара</item>
+        <item>Ақ</item>
+        <item>Қызыл</item>
+        <item>Жасыл</item>
+        <item>Көк</item>
+        <item>Сұр реңктер</item>
+        <item>Экран шеттері</item>
+    </string-array>
 </resources>

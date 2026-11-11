@@ -43,6 +43,8 @@ import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
@@ -51,6 +53,8 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.Inet4Address
 import java.security.SecureRandom
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * The page a phone opens after scanning the TV's QR code: choose a wallpaper and the screensaver,
@@ -76,7 +80,12 @@ class PhoneServer private constructor(private val context: Context, private val 
                 path != "/api/kids/start" && !pinOk(session.headers["x-aerial-pin"])
             ) return json(state().put("saved", false).put("kidsLocked", true))
             when {
-                path == "/" -> newFixedLengthResponse(Response.Status.OK, "text/html; charset=utf-8", page())
+                path == "/" -> {
+                    if (session.method == Method.GET) {
+                        activeConnectionCheck.get()?.visit(session.parameters["check"]?.firstOrNull())
+                    }
+                    newFixedLengthResponse(Response.Status.OK, "text/html; charset=utf-8", page())
+                }
                 session.method == Method.POST && path == "/api/kids/unlock" -> {
                     val ok = pinOk(form(session)["pin"])
                     json(state().put("saved", ok).put("pinRight", ok))
@@ -605,7 +614,27 @@ class PhoneServer private constructor(private val context: Context, private val 
 
     private fun text(status: Response.Status, msg: String) = newFixedLengthResponse(status, "text/plain; charset=utf-8", msg)
 
+    internal class ConnectionCheck {
+        val id: String = UUID.randomUUID().toString()
+        private val mutableReached = MutableStateFlow(false)
+        val reached = mutableReached.asStateFlow()
+
+        fun visit(id: String?) {
+            if (id == this.id) mutableReached.value = true
+        }
+    }
+
     companion object {
+        private val activeConnectionCheck = AtomicReference<ConnectionCheck>()
+
+        internal fun beginConnectionCheck(check: ConnectionCheck) {
+            activeConnectionCheck.set(check)
+        }
+
+        internal fun endConnectionCheck(check: ConnectionCheck) {
+            activeConnectionCheck.compareAndSet(check, null)
+        }
+
         val PORT = if (app.orchard.tv.BuildConfig.PREVIEW) 8792 else 8791
         private const val TAG = "AerialPhone"
         /** Enough for a batch of phone photos at full size. */

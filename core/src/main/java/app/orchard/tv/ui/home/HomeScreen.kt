@@ -79,6 +79,7 @@ import app.orchard.tv.settings.Restricted
 import app.orchard.tv.guard.KidsWatch
 import app.orchard.tv.apps.AppEntry
 import app.orchard.tv.ui.control.ControlCenter
+import app.orchard.tv.ui.control.SelfCheckScreen
 import app.orchard.tv.ui.wallpaper.SheetCovers
 import app.orchard.tv.ui.wallpaper.WallpaperSheet
 import app.orchard.tv.update.Updates
@@ -493,6 +494,7 @@ fun HomeScreen(
         Modifier
             .fillMaxSize()
             .onPreviewKeyEvent { e ->
+                if (overlay is Overlay.SelfCheck) return@onPreviewKeyEvent false
                 // The remote takes the grid back from the finger: scroll follows focus again.
                 // Back leaves it to BackHandler, which needs to know the grid was dragged
                 // (gesture navigation sends Back as a key too).
@@ -1157,6 +1159,10 @@ fun HomeScreen(
         )
 
         NoticeBanner(vm.notice, Modifier.align(Alignment.TopCenter).padding(top = 24.dp), vm.noticeGlyph)
+
+        if (overlay is Overlay.SelfCheck) {
+            SelfCheckScreen(overlay.test, onBack = { vm.overlay = Overlay.ControlCenter(CcPage.SelfCheck) })
+        }
 
         Screensaver(visible = vm.screensaverVisible, apps = apps, now = now, skips = vm.screensaverSkips, carry = when {
                 filmSaver -> if (Wallpapers.isVideo()) SaverCarry.Video(homeVideo) else SaverCarry.Film(liveFilm)

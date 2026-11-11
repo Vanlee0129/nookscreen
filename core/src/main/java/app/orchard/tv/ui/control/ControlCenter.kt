@@ -146,7 +146,8 @@ fun ControlCenter(
             CcPage.Main -> onClose()
             CcPage.Inputs -> vm.overlay = Overlay.ControlCenter(CcPage.Main)
             CcPage.InputSettings -> vm.overlay = Overlay.ControlCenter(CcPage.Inputs)
-            CcPage.Update, CcPage.Setup, CcPage.Scenes -> vm.overlay = Overlay.ControlCenter(CcPage.Main)
+            CcPage.Update, CcPage.Setup, CcPage.Scenes, CcPage.SelfCheck -> vm.overlay = Overlay.ControlCenter(CcPage.Main)
+            CcPage.NetworkCheck -> vm.overlay = Overlay.ControlCenter(CcPage.SelfCheck)
             CcPage.SceneEdit -> vm.overlay = Overlay.ControlCenter(CcPage.Scenes)
             CcPage.SceneSources -> vm.overlay = Overlay.ControlCenter(CcPage.SceneEdit)
             CcPage.Themes -> vm.overlay = Overlay.ControlCenter(vm.themeReturnPage)
@@ -225,6 +226,8 @@ fun ControlCenter(
                             CcPage.Plugins -> PluginPage(vm, visible && p == page)
                             CcPage.Update -> UpdatePage(vm, visible)
                             CcPage.Setup -> SetupPage(vm, visible, onOpen)
+                            CcPage.SelfCheck -> SelfCheckPage(vm, visible && p == page)
+                            CcPage.NetworkCheck -> NetworkCheckPage(vm, visible && p == page)
                         }
                     }
                 }
@@ -311,7 +314,7 @@ private fun MainPage(
         runCatching { first.requestFocus() }
     }
 
-    Column {
+    Column(Modifier.verticalScroll(rememberScrollState())) {
         Row(verticalAlignment = Alignment.Bottom) {
             Column(Modifier.weight(1f)) {
                 BasicText(timeText(now), style = Type.SmallClock.copy(fontSize = Type.LargeTitle.fontSize * 1.05f))
@@ -408,6 +411,12 @@ private fun MainPage(
                 trailing = vm.desktopScenes.scenes.first { it.id == vm.desktopScenes.active }.name,
             )
         }
+        MenuRow(
+            Glyph.Check,
+            stringResource(R.string.self_check_title),
+            onClick = { vm.overlay = Overlay.ControlCenter(CcPage.SelfCheck) },
+            trailing = "›",
+        )
         // What the TV opens when switched on: easy to forget, and puzzling when it happens.
         vm.bootTargetLabel()?.let { name ->
             MenuRow(

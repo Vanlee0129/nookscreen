@@ -374,4 +374,31 @@
     <string name="plugin_incompatible_short">Incompatible</string>
     <string name="plugin_unavailable">No theme release is available yet.</string>
     <string name="plugin_failed">The plugin operation failed.</string>
+
+    <string name="self_check_title">TV self-check</string>
+    <string name="self_check_picture">Picture test</string>
+    <string name="self_check_picture_hint">Use Left and Right to switch test patterns. Press Back to exit.</string>
+    <string name="self_check_remote">Remote test</string>
+    <string name="self_check_remote_hint">See which buttons reach NookScreen.</string>
+    <string name="self_check_remote_waiting">Press a button on the remote.</string>
+    <string name="self_check_remote_key">Last button: %1$s (%2$d)</string>
+    <string name="self_check_remote_repeat">Repeats while held: %d</string>
+    <string name="self_check_remote_reserved">Press Back to exit. Some buttons, such as Home and Power, are handled by the TV itself.</string>
+    <string name="self_check_network">Network check</string>
+    <string name="self_check_network_type">Connection: %s</string>
+    <string name="self_check_network_qr">QR code for the phone connection test</string>
+    <string name="self_check_network_preparing">Preparing the connection test…</string>
+    <string name="self_check_network_no_address">No local address found. Connect the TV to your network, then open this page again.</string>
+    <string name="self_check_network_scan">Connect your phone to the same network and scan this code to test the connection.</string>
+    <string name="self_check_network_reached">Connection confirmed. The browser reached this TV.</string>
+    <string name="self_check_diagnostics">To copy the diagnostic report, open Report an Issue on the phone page.</string>
+    <string-array name="self_check_patterns">
+        <item>Black</item>
+        <item>White</item>
+        <item>Red</item>
+        <item>Green</item>
+        <item>Blue</item>
+        <item>Grayscale</item>
+        <item>Screen edges</item>
+    </string-array>
 </resources>
