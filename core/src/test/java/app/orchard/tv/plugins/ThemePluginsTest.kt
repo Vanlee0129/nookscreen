@@ -3,6 +3,7 @@ package app.orchard.tv.plugins
 import android.content.Context
 import app.orchard.tv.settings.HomeThemes
 import app.orchard.tv.settings.ThemePack
+import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -60,6 +61,23 @@ class ThemePluginsTest {
         assertEquals(2, reopened.manifest.version)
         assertFalse(reopened.enabled)
         assertEquals(PluginResult.Unchanged, artifact().inputStream().use { store.install(it) })
+    }
+
+    @Test fun catalogDiscoversNewThemeChannelsWithoutIncludingCoreOrFeatureReleases() {
+        fun release(tag: String, filename: String, prerelease: Boolean = true, draft: Boolean = false) =
+            JSONObject().put("tag_name", tag).put("name", "New theme")
+                .put("prerelease", prerelease).put("draft", draft)
+                .put("assets", JSONArray().put(JSONObject().put("name", filename).put("state", "uploaded")))
+
+        val json = JSONArray()
+            .put(release("plugin-night-sky", "nookscreen-theme-night-sky.zip"))
+            .put(release("plugin-clock-v1", "clock.apk"))
+            .put(release("v0.0.3", "nookscreen-daily.apk", prerelease = false))
+            .put(release("plugin-draft", "nookscreen-theme-draft.zip", draft = true))
+            .put(release("plugin-classic", "nookscreen-theme-classic.zip"))
+            .put(release("plugin-mismatch", "nookscreen-theme-other.zip"))
+
+        assertEquals(listOf(ThemeRelease("night-sky", "New theme")), parseThemeReleases(json))
     }
 
     private fun artifact() = File(System.getProperty("nook.themePacks"), "nookscreen-theme-sanrio.zip")

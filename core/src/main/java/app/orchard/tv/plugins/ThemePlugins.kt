@@ -70,7 +70,7 @@ internal class ThemePlugins(context: Context) {
             }.onFailure { Log.w("NookPlugins", "Ignoring unreadable theme archive", it) }.getOrNull()
         }.toMap()
 
-    fun install(input: InputStream, expectedId: String? = null, length: Long? = null): PluginResult {
+    fun install(input: InputStream, expectedId: String? = null): PluginResult {
         val temporary = runCatching { File.createTempFile("import-", ".part", directory) }
             .getOrElse { return PluginResult.Failed }
         try {
@@ -78,15 +78,13 @@ internal class ThemePlugins(context: Context) {
                 temporary.outputStream().use { output ->
                     val buffer = ByteArray(8192)
                     var total = 0L
-                    while (length == null || total < length) {
-                        val requested = length?.let { minOf(it - total, buffer.size.toLong()).toInt() } ?: buffer.size
-                        val count = input.read(buffer, 0, requested)
+                    while (true) {
+                        val count = input.read(buffer)
                         if (count < 0) break
                         total += count
                         require(total <= MAX_ARCHIVE)
                         output.write(buffer, 0, count)
                     }
-                    require(length == null || total == length)
                 }
                 inspect(temporary, validateImages = true).also { require(expectedId == null || expectedId == it.id) }
             } catch (_: Exception) {
@@ -130,7 +128,7 @@ internal class ThemePlugins(context: Context) {
     }
 
     companion object {
-        const val MAX_ARCHIVE = 32L * 1024 * 1024
+        private const val MAX_ARCHIVE = 32L * 1024 * 1024
         private const val MAX_IMAGE = 8L * 1024 * 1024
         private const val MAX_MANIFEST = 64L * 1024
         private const val MAX_ENTRIES = 256

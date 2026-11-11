@@ -355,7 +355,7 @@
     <string name="theme_upload_hint">打开「壁纸与个性化」并扫描设置二维码，即可为当前主题上传应用图标。</string>
     <string name="theme_copy_failed">未能复制主题图标。</string>
     <string name="plugins_title">插件</string>
-    <string name="plugin_import">导入主题 ZIP</string>
+    <string name="plugins_empty">尚未安装功能插件。</string>
     <string name="plugin_add">安装</string>
     <string name="plugin_working">下载中…</string>
     <string name="plugin_enable">启用</string>

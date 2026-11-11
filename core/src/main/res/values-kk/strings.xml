@@ -348,7 +348,7 @@
     <string name="theme_upload_hint">Осы тақырыпқа белгішелер жүктеу үшін тұсқағаз баптауларын ашып, кодты сканерлеңіз.</string>
     <string name="theme_copy_failed">Тақырып белгішелерін көшіру мүмкін болмады.</string>
     <string name="plugins_title">Плагиндер</string>
-    <string name="plugin_import">Тақырып ZIP файлын импорттау</string>
+    <string name="plugins_empty">Функциялық плагиндер орнатылмаған.</string>
     <string name="plugin_add">Орнату</string>
     <string name="plugin_working">Жүктелуде…</string>
     <string name="plugin_enable">Қосу</string>

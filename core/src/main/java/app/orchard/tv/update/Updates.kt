@@ -46,8 +46,9 @@ import java.util.Locale
 object Updates {
     private const val TAG = "AerialUpdates"
     private const val PREFS = "nookscreen_updates"
-    const val RELEASES = "https://github.com/Vanlee0129/nookscreen/releases"
-    private const val LATEST_RELEASE = "https://api.github.com/repos/Vanlee0129/nookscreen/releases/latest"
+    internal const val REPOSITORY = "Vanlee0129/nookscreen"
+    const val RELEASES = "https://github.com/$REPOSITORY/releases"
+    private const val LATEST_RELEASE = "https://api.github.com/repos/$REPOSITORY/releases/latest"
     private val assetName = "nookscreen-${BuildConfig.FLAVOR}.apk"
 
     /**

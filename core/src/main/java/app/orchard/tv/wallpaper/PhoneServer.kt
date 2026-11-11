@@ -13,7 +13,7 @@ import app.orchard.tv.apps.BundledIcons
 import app.orchard.tv.settings.HomeThemes
 import app.orchard.tv.plugins.PluginResult
 import app.orchard.tv.plugins.ThemePlugins
-import app.orchard.tv.plugins.ThemeRelease
+import app.orchard.tv.plugins.ThemeReleases
 import app.orchard.tv.plugins.title
 import app.orchard.tv.apps.ThemePackArt
 import app.orchard.tv.apps.FOLDER_KEY_PREFIX
@@ -96,7 +96,10 @@ class PhoneServer private constructor(private val context: Context, private val 
                     if (can) onMain { Restricted.start(); KidsWatch.poke() }
                     json(state().put("saved", can))
                 }
-                path == "/api/state" -> json(state())
+                path == "/api/state" -> {
+                    ThemeReleases.refresh(context)
+                    json(state())
+                }
                 path == "/api/diagnostics" -> text(Response.Status.OK, Diagnostics.report(context))
                 path.startsWith("/thumb/") -> thumb(path.removePrefix("/thumb/"))
                 session.method == Method.POST && path == "/api/wallpaper" -> {
@@ -131,7 +134,6 @@ class PhoneServer private constructor(private val context: Context, private val 
                     onMain { Wallpapers.deletePhoto(id) }
                     json(state())
                 }
-                session.method == Method.POST && path == "/api/plugins/import" -> importThemePlugin(session)
                 session.method == Method.POST && path == "/api/plugins/theme" -> themePluginAction(form(session))
                 session.method == Method.POST && path == "/api/upload" -> upload(session)
                 session.method == Method.POST && path == "/api/videos/send" -> video(session)
@@ -237,11 +239,11 @@ class PhoneServer private constructor(private val context: Context, private val 
 
     private fun themePluginState(): JSONArray = JSONArray().apply {
         val installed = ThemePlugins.of(context).installed.value
-        val official = ThemeRelease.entries.associateBy { it.id }
+        val official = ThemeReleases.catalog.value.associateBy { it.id }
         for (id in (official.keys + installed.keys).sorted()) {
             val pack = installed[id]
             put(JSONObject().put("id", id)
-                .put("name", pack?.title(context) ?: context.getString(official.getValue(id).label))
+                .put("name", pack?.title(context) ?: official.getValue(id).title(context))
                 .put("version", pack?.manifest?.version ?: 0)
                 .put("compatible", pack?.manifest?.compatible ?: true)
                 .put("enabled", pack?.enabled ?: false)
@@ -253,18 +255,11 @@ class PhoneServer private constructor(private val context: Context, private val 
         .put("saved", result == PluginResult.Installed || result == PluginResult.Unchanged)
         .put("pluginMessage", context.getString(result.message)))
 
-    private fun importThemePlugin(session: IHTTPSession): Response {
-        val length = session.headers["content-length"]?.toLongOrNull() ?: 0L
-        if (length !in 1..ThemePlugins.MAX_ARCHIVE) return pluginResponse(PluginResult.Invalid).apply { closeConnection(true) }
-        val result = ThemePlugins.of(context).install(session.inputStream, length = length)
-        return pluginResponse(result).apply { closeConnection(true) }
-    }
-
     private fun themePluginAction(form: Map<String, String>): Response {
         val id = form["id"].orEmpty()
         val store = ThemePlugins.of(context)
         val saved = when (form["action"]) {
-            "download" -> return pluginResponse(ThemeRelease.entries.firstOrNull { it.id == id }
+            "download" -> return pluginResponse(ThemeReleases.catalog.value.firstOrNull { it.id == id }
                 ?.install(context) ?: PluginResult.Unavailable)
             "apply" -> runBlocking(Dispatchers.Main) { applyThemePlugin?.invoke(id) == true }
             "enable" -> store.setEnabled(id, true)

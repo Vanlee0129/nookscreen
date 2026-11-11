@@ -150,7 +150,8 @@ fun ControlCenter(
             CcPage.SceneEdit -> vm.overlay = Overlay.ControlCenter(CcPage.Scenes)
             CcPage.SceneSources -> vm.overlay = Overlay.ControlCenter(CcPage.SceneEdit)
             CcPage.Themes -> vm.overlay = Overlay.ControlCenter(vm.themeReturnPage)
-            CcPage.ThemeManage, CcPage.Plugins -> vm.overlay = Overlay.ControlCenter(CcPage.Themes)
+            CcPage.ThemeManage -> vm.overlay = Overlay.ControlCenter(CcPage.Themes)
+            CcPage.Plugins -> vm.overlay = Overlay.ControlCenter(CcPage.Main)
         }
     }
 
@@ -392,6 +393,12 @@ private fun MainPage(
                 Glyph.Photo,
                 stringResource(R.string.theme_title),
                 onClick = { vm.openThemes(CcPage.Main) },
+                trailing = "›",
+            )
+            MenuRow(
+                Glyph.Gear,
+                stringResource(R.string.plugins_title),
+                onClick = { vm.overlay = Overlay.ControlCenter(CcPage.Plugins) },
                 trailing = "›",
             )
             MenuRow(

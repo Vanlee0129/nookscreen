@@ -17,6 +17,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.key
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
@@ -33,13 +35,17 @@ import app.orchard.tv.Overlay
 import app.orchard.tv.R
 import app.orchard.tv.settings.HomeThemes
 import app.orchard.tv.settings.ThemePack
+import app.orchard.tv.plugins.ThemeRelease
+import app.orchard.tv.plugins.ThemeReleases
 import app.orchard.tv.plugins.title
+import app.orchard.tv.settings.Restricted
 import app.orchard.tv.settings.SavedTheme
 import app.orchard.tv.ui.home.MenuRow
 import app.orchard.tv.ui.theme.Glyph
 import app.orchard.tv.ui.theme.Type
 import app.orchard.tv.wallpaper.Wallpapers
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private enum class Action { Save, Manage, Rename, Update, Delete }
@@ -50,15 +56,30 @@ internal fun ThemePage(vm: HomeViewModel, page: CcPage, takeFocus: Boolean) {
     val context = LocalContext.current
     val themes = vm.homeThemes
     val plugins by vm.themePlugins.installed.collectAsState()
+    val catalog by ThemeReleases.catalog.collectAsState()
     val current = HomeThemes.activeSelection(context)
+    val scope = rememberCoroutineScope()
+    var downloading by remember { mutableStateOf<ThemeRelease?>(null) }
     val first = remember { FocusRequester() }
     var prompt by remember { mutableStateOf<Prompt?>(null) }
     fun show(target: CcPage) { vm.overlay = Overlay.ControlCenter(target) }
 
-    LaunchedEffect(takeFocus) {
-        if (takeFocus) {
+    LaunchedEffect(takeFocus, Restricted.active) {
+        if (!takeFocus) return@LaunchedEffect
+        if (Restricted.active) show(CcPage.Main)
+        else {
+            if (page == CcPage.Themes) ThemeReleases.refresh(context)
             withFrameNanos { }
             runCatching { first.requestFocus() }
+        }
+    }
+
+    fun download(release: ThemeRelease) {
+        if (downloading != null || Restricted.active) return
+        downloading = release
+        scope.launch {
+            try { vm.notify(context.getString(vm.downloadTheme(release).message), Glyph.Photo) }
+            finally { downloading = null }
         }
     }
 
@@ -124,12 +145,53 @@ internal fun ThemePage(vm: HomeViewModel, page: CcPage, takeFocus: Boolean) {
                     current.pack == ThemePack.Classic && current.customId == null,
                     stringResource(R.string.theme_classic), ThemePack.Classic.wallpaper, first,
                 ) { vm.applyThemePlugin("classic") }
-                plugins.values.filter { it.active }.sortedBy { it.manifest.name }.forEach { plugin ->
-                    val pack = ThemePack.of(plugin.manifest.id)
-                    ThemeRow(current.pack == pack && current.customId == null, plugin.title(context), pack.wallpaper,
-                        revision = plugin.stamp) { vm.applyThemePlugin(pack.key) }
+                val releases = catalog.associateBy { it.id }
+                for (id in releases.keys + plugins.keys) key(id) {
+                    val release = releases[id]
+                    val plugin = plugins[id]
+                    if (plugin == null) {
+                        checkNotNull(release)
+                        MenuRow(Glyph.Photo, release.title(context), { download(release) },
+                            trailing = stringResource(if (downloading == release) R.string.plugin_working else R.string.plugin_add))
+                    } else {
+                        val pack = ThemePack.of(id)
+                        val title = plugin.title(context)
+                        val selected = current.pack == pack && current.customId == null
+                        val status = when {
+                            downloading == release && release != null -> stringResource(R.string.plugin_working)
+                            !plugin.manifest.compatible -> stringResource(R.string.plugin_incompatible_short)
+                            !plugin.enabled -> stringResource(R.string.plugin_disabled)
+                            selected -> "✓"
+                            else -> "›"
+                        }
+                        ThemeRow(selected, title, pack.wallpaper.takeIf { plugin.active },
+                            revision = plugin.stamp, trailing = status) {
+                            if (Restricted.active) return@ThemeRow
+                            val actions = buildList<Pair<Int, () -> Unit>> {
+                                if (plugin.active) add(R.string.plugin_apply to { vm.applyThemePlugin(id); Unit })
+                                if (plugin.manifest.compatible) add((if (plugin.enabled) R.string.plugin_disable else R.string.plugin_enable) to {
+                                    if (!vm.themePlugins.setEnabled(id, !plugin.enabled)) {
+                                        vm.notify(context.getString(R.string.plugin_failed), Glyph.Photo)
+                                    }
+                                })
+                                if (release != null) add(R.string.plugin_update to { download(release) })
+                                add(R.string.plugin_remove to {
+                                    AlertDialog.Builder(context).setTitle(context.getString(R.string.theme_delete_confirm, title))
+                                        .setNegativeButton(android.R.string.cancel, null)
+                                        .setPositiveButton(android.R.string.ok) { _, _ ->
+                                            if (!Restricted.active && !vm.themePlugins.remove(id)) {
+                                                vm.notify(context.getString(R.string.plugin_failed), Glyph.Photo)
+                                            }
+                                        }.show()
+                                })
+                            }
+                            AlertDialog.Builder(context).setTitle(title)
+                                .setItems(actions.map { context.getString(it.first) }.toTypedArray()) { _, index ->
+                                    if (!Restricted.active) actions[index].second()
+                                }.show()
+                        }
+                    }
                 }
-                MenuRow(Glyph.Gear, stringResource(R.string.plugins_title), { show(CcPage.Plugins) }, trailing = "›")
                 if (themes.saved.isNotEmpty()) {
                     BasicText(
                         stringResource(R.string.theme_saved),
@@ -164,10 +226,18 @@ internal fun ThemePage(vm: HomeViewModel, page: CcPage, takeFocus: Boolean) {
 
 
 @Composable
-private fun ThemeRow(selected: Boolean, name: String, wallpaper: String, first: FocusRequester? = null, revision: Long = 0, onClick: () -> Unit) {
+private fun ThemeRow(
+    selected: Boolean,
+    name: String,
+    wallpaper: String?,
+    first: FocusRequester? = null,
+    revision: Long = 0,
+    trailing: String? = if (selected) "✓" else null,
+    onClick: () -> Unit,
+) {
     val thumbnail by produceState<ImageBitmap?>(null, wallpaper, revision) {
-        value = withContext(Dispatchers.IO) { Wallpapers.thumbnail(wallpaper)?.asImageBitmap() }
+        value = wallpaper?.let { withContext(Dispatchers.IO) { Wallpapers.thumbnail(it)?.asImageBitmap() } }
     }
     MenuRow(if (selected) Glyph.Check else Glyph.Photo, name, onClick, focusRequester = first,
-        trailing = if (selected) "✓" else null, preview = thumbnail)
+        trailing = trailing, preview = thumbnail)
 }

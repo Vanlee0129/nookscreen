@@ -356,7 +356,7 @@
     <string name="theme_upload_hint">Open Wallpaper and Personalization, then scan the phone setup code to upload icons for this theme.</string>
     <string name="theme_copy_failed">Could not copy the theme icons.</string>
     <string name="plugins_title">Plugins</string>
-    <string name="plugin_import">Import theme ZIP</string>
+    <string name="plugins_empty">No feature plugins installed.</string>
     <string name="plugin_add">Install</string>
     <string name="plugin_working">Downloading…</string>
     <string name="plugin_enable">Enable</string>

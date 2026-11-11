@@ -348,7 +348,7 @@
     <string name="theme_upload_hint">Откройте настройки обоев и отсканируйте код, чтобы загрузить значки для этой темы.</string>
     <string name="theme_copy_failed">Не удалось скопировать значки темы.</string>
     <string name="plugins_title">Плагины</string>
-    <string name="plugin_import">Импорт ZIP с темой</string>
+    <string name="plugins_empty">Функциональные плагины не установлены.</string>
     <string name="plugin_add">Установить</string>
     <string name="plugin_working">Загрузка…</string>
     <string name="plugin_enable">Включить</string>

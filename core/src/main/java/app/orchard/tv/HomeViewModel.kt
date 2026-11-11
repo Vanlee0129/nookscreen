@@ -32,7 +32,6 @@ import app.orchard.tv.settings.HomeThemes
 import app.orchard.tv.settings.ThemePack
 import app.orchard.tv.plugins.ThemePlugins
 import app.orchard.tv.plugins.ThemeRelease
-import app.orchard.tv.plugins.PluginResult
 import app.orchard.tv.wallpaper.PhoneServer
 import app.orchard.tv.settings.ThemeSelection
 import app.orchard.tv.settings.ThemeLook
@@ -497,17 +496,6 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         if (id != "classic" && Wallpapers.items.none { it.id == pack.wallpaper }) Wallpapers.refreshThemePlugins()
         applyTheme(ThemeLook(pack.wallpaper, pack), closePanel = closePanel)
         return true
-    }
-
-    internal fun importTheme(uri: android.net.Uri) {
-        if (Restricted.active) return
-        viewModelScope.launch {
-            val result = withContext(Dispatchers.IO) {
-                runCatching { context.contentResolver.openInputStream(uri)?.use { themePlugins.install(it) } }
-                    .getOrNull() ?: PluginResult.Failed
-            }
-            notify(context.getString(result.message), Glyph.Photo)
-        }
     }
 
     internal suspend fun downloadTheme(release: ThemeRelease) = withContext(Dispatchers.IO) { release.install(context) }

@@ -348,7 +348,7 @@
     <string name="theme_upload_hint">Відкрийте налаштування шпалер і відскануйте код, щоб завантажити значки для цієї теми.</string>
     <string name="theme_copy_failed">Не вдалося скопіювати значки теми.</string>
     <string name="plugins_title">Плагіни</string>
-    <string name="plugin_import">Імпорт ZIP з темою</string>
+    <string name="plugins_empty">Функціональні плагіни не встановлено.</string>
     <string name="plugin_add">Встановити</string>
     <string name="plugin_working">Завантаження…</string>
     <string name="plugin_enable">Увімкнути</string>
