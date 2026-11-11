@@ -4,6 +4,7 @@
   <p><strong>给你的电视，换个首页。</strong></p>
   <p>栖屏是开源 Android TV 桌面。用遥控器把常用应用、HDMI 和壁纸放到一起，给日常、观影和游戏各留一套布局。</p>
   <p>
+    <a href="https://vanlee0129.github.io/nookscreen/">官网</a> |
     <a href="https://github.com/Vanlee0129/nookscreen/releases/latest/download/nookscreen-daily.apk"><strong>下载日用 APK</strong></a> |
     <a href="#安装">安装指南</a> |
     <a href="https://github.com/Vanlee0129/nookscreen/releases/latest">版本记录</a> |

@@ -4,6 +4,7 @@
   <p><strong>A home screen of your own.</strong></p>
   <p>NookScreen is an open-source Android TV launcher. Arrange your apps, HDMI inputs and wallpaper with the remote, and keep a layout for everyday viewing, movies and games.</p>
   <p>
+    <a href="https://vanlee0129.github.io/nookscreen/en/">Website</a> |
     <a href="https://github.com/Vanlee0129/nookscreen/releases/latest/download/nookscreen-daily.apk"><strong>Download APK</strong></a> |
     <a href="#install">Installation</a> |
     <a href="https://github.com/Vanlee0129/nookscreen/releases/latest">Release notes</a> |
