@@ -8,6 +8,6 @@ mkdir -p -- "$output/en" "$output/assets"
 cp -- "$repo/website/index.html" "$repo/website/style.css" "$output/"
 cp -- "$repo/website/en/index.html" "$output/en/"
 cp -- "$repo/docs/brand/icon.png" "$output/assets/"
-for name in night morning sanrio-theme marvel-theme; do
+for name in sanrio-home sanrio-scene sanrio-theme marvel-theme; do
     cp -- "$repo/docs/screenshots/$name.jpg" "$output/assets/"
 done

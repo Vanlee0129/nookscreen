@@ -9,7 +9,7 @@
     <a href="https://github.com/Vanlee0129/nookscreen/releases/latest">Release notes</a> |
     <a href="README.md">简体中文</a>
   </p>
-  <img src="docs/screenshots/night.jpg" width="960" alt="NookScreen on a Xiaomi TV with a night wallpaper, HDMI 2, weather and two rows of app tiles">
+  <img src="docs/screenshots/sanrio-home.jpg" width="960" alt="NookScreen on a Xiaomi TV with the Sanrio Strawberry Picnic wallpaper and themed tiles">
 </div>
 
 ## What you can do
@@ -19,9 +19,9 @@
 - **Customize from your phone.** Put your phone and TV on the same local network, then open the setup code under **Control Center → Themes → Wallpaper and Personalization**. Upload photos, change app artwork or arrange your home screen.
 - **Use the idle screen.** Set a clock, photo or aerial screensaver under personalization. You can also add [your own screensaver videos](docs/SCREENSAVER_VIDEOS.md).
 
-| Everyday layout | Scene settings |
+| Sanrio scene | Scene settings |
 | --- | --- |
-| ![Dawn wallpaper, HDMI 1 and an app folder](docs/screenshots/morning.jpg) | ![Scene settings for wallpaper, favorite inputs and renaming](docs/screenshots/scenes.jpg) |
+| ![HDMI and app tiles in a Sanrio-themed scene](docs/screenshots/sanrio-scene.jpg) | ![Scene settings for wallpaper, favorite inputs and renaming](docs/screenshots/scenes.jpg) |
 
 ## Install
 
@@ -90,6 +90,8 @@ Use **JDK 17** and **Android SDK 36**. From the repository root:
 | [`website/`](website/) | Chinese and English website source for GitHub Pages |
 
 Preview uses package ID `app.nookscreen.tv.preview` for side-by-side testing. The daily APK is under `core/build/outputs/apk/daily/release/` and theme packages are under `plugins/themes/build/distributions/`. See the [architecture notes](docs/ARCHITECTURE.md), [plugin guide](docs/PLUGINS.md) and [signing and release guide](docs/RELEASE.md).
+
+To preview the website, run `bash tools/build-website.sh <output-directory>` and serve that directory over HTTP. GitHub Pages publishes the generated files from the root of the `gh-pages` branch.
 
 [Report a problem or share device notes](https://github.com/Vanlee0129/nookscreen/issues/new/choose). Include your TV model, Android and NookScreen versions, and steps to reproduce. For a theme or plugin issue, include its name and version.
 

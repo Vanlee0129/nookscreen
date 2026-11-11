@@ -9,7 +9,7 @@
     <a href="https://github.com/Vanlee0129/nookscreen/releases/latest">版本记录</a> |
     <a href="README.en.md">English</a>
   </p>
-  <img src="docs/screenshots/night.jpg" width="960" alt="小米电视上的栖屏首页，夜色壁纸前有 HDMI 2、天气和两排应用磁贴">
+  <img src="docs/screenshots/sanrio-home.jpg" width="960" alt="小米电视上的栖屏首页，展示三丽鸥草莓野餐壁纸和主题磁贴">
 </div>
 
 ## 电视首页能做什么
@@ -19,9 +19,9 @@
 - **用手机换壁纸和图标。** 手机和电视连同一局域网，在「控制中心 → 主题 → 壁纸与个性化」打开设置二维码。扫码后可上传照片、换应用图标或整理首页。
 - **让电视空闲时显示照片或时钟。** 在个性化里选择时钟、照片或航拍等屏保，也可添加[自己的屏保视频](docs/SCREENSAVER_VIDEOS.md)。
 
-| 日常首页 | 场景设置 |
+| 三丽鸥主题场景 | 场景设置 |
 | --- | --- |
-| ![黎明壁纸下的 HDMI 1 和应用文件夹](docs/screenshots/morning.jpg) | ![场景设置中的壁纸、常用信号源与重命名](docs/screenshots/scenes.jpg) |
+| ![三丽鸥主题场景里的 HDMI 与应用磁贴](docs/screenshots/sanrio-scene.jpg) | ![场景设置中的壁纸、常用信号源与重命名](docs/screenshots/scenes.jpg) |
 
 ## 安装
 
@@ -90,6 +90,8 @@ Core 提供首页、遥控器导航、场景和更新。桌面之外的功能和
 | [`website/`](website/) | GitHub Pages 的中英文官网源码 |
 
 Preview 包名为 `app.nookscreen.tv.preview`，可与日用版并装验收。日用 APK 在 `core/build/outputs/apk/daily/release/`，主题包在 `plugins/themes/build/distributions/`。更多细节见[架构](docs/ARCHITECTURE.md)、[插件开发](docs/PLUGINS.md)和[签名与发布](docs/RELEASE.md)。
+
+预览官网可运行 `bash tools/build-website.sh <输出目录>`，再用本地 HTTP 服务打开该目录。GitHub Pages 从 `gh-pages` 分支根目录发布构建结果。
 
 欢迎[报告问题或补充机型记录](https://github.com/Vanlee0129/nookscreen/issues/new/choose)。请附上电视型号、Android 和栖屏版本及复现步骤。与主题或插件相关时，也请注明名称和版本。
 
