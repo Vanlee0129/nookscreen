@@ -19,8 +19,8 @@ android {
         // Android 5.0. Compose 1.10 and later need 6.0, so the Compose BOM below stays on 1.9.
         minSdk = 21
         targetSdk = 34
-        versionCode = 7
-        versionName = "0.0.6"
+        versionCode = 8
+        versionName = "0.0.7"
         buildConfigField("boolean", "PREVIEW", "false")
         resValue("string", "revival_account_type", "app.nookscreen.tv")
         // `./gradlew -Pdiag ...`: a build for one reporter's TV whose logcat shows no app lines;
