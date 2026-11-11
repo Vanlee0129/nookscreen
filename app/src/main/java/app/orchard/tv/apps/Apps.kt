@@ -13,6 +13,9 @@ import app.orchard.tv.system.CoocaaHome
 import app.orchard.tv.system.TvSource
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.toArgb
+import app.orchard.tv.settings.HomeThemes
+import app.orchard.tv.settings.ThemePack
+import app.orchard.tv.settings.ThemeSelection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -91,14 +94,16 @@ fun sourceEntry(context: Context, source: TvSource): AppEntry {
     val look = SourceLooks.of(source.id)
     val name = look?.name ?: look?.device?.let { context.getString(it.label) }
     // Home arranges its tiles on every move and hide; the art is made again only when it changes.
-    val made = SourceArt(look, source.label, source.deviceName, CustomIcons.stamp(key), TileArtFactory.W)
+    val theme = HomeThemes.activeSelection(context)
+    val made = SourceArt(look, source.label, source.deviceName, CustomIcons.stamp(key, theme.customId), TileArtFactory.W, theme)
     val art = synchronized(sourceArt) { sourceArt[key]?.takeIf { it.first == made }?.second } ?: run {
-        val custom = CustomIcons.load(key)
+        val custom = CustomIcons.load(key, theme.customId)
         (if (custom != null) TileArtFactory.fromBanner(android.graphics.drawable.BitmapDrawable(android.content.res.Resources.getSystem(), custom))
         // A chosen device's mark goes on alone, its name on the caption; a typed name still shows.
         else if (look?.device != null && look.name == null) TileArtFactory.forSource(source.kind, null, null, look.device)
         else if (name != null) TileArtFactory.forSource(source.kind, name, source.label, look?.device)
         else TileArtFactory.forSource(source.kind, source.label, source.deviceName))
+            .let { if (custom == null) ThemePackArt.frame(context, theme.pack, it) else it }
             .also { synchronized(sourceArt) { sourceArt[key] = made to it } }
     }
     return AppEntry(
@@ -112,7 +117,7 @@ fun sourceEntry(context: Context, source: TvSource): AppEntry {
     )
 }
 
-private data class SourceArt(val look: SourceLook?, val label: String, val device: String?, val stamp: Long, val width: Int)
+private data class SourceArt(val look: SourceLook?, val label: String, val device: String?, val stamp: Long, val width: Int, val theme: ThemeSelection)
 private val sourceArt = HashMap<String, Pair<SourceArt, TileArt>>()
 
 const val SOURCE_KEY_PREFIX = "input:"
@@ -207,11 +212,11 @@ object AppCatalog {
     private val drawnByAerial = java.util.concurrent.ConcurrentHashMap<String, SystemTile>()
 
     /** Whether [pkg]'s tile shows the icon library's picture (when it has one). */
-    fun usesLibrary(pkg: String): Boolean =
+    fun usesLibrary(pkg: String, pack: ThemePack): Boolean =
         when (IconLibrary.pick(pkg)) {
             IconLibrary.Pick.Library -> true
             IconLibrary.Pick.Own -> false
-            null -> pkg !in BundledIcons.assets && !drawnByAerial.containsKey(pkg)
+            null -> !ThemePackArt.hasTile(pack, pkg) && pkg !in BundledIcons.assets && !drawnByAerial.containsKey(pkg)
         }
 
     /** The apps of the last load, for the phone page. */
@@ -259,6 +264,7 @@ object AppCatalog {
      */
     suspend fun load(context: Context, first: ((installed: Set<String>) -> Set<String>)? = null): List<AppEntry> = withContext(Dispatchers.Default) {
         val started = android.os.SystemClock.uptimeMillis()
+        val theme = HomeThemes.activeSelection(context)
         TileDiskCache.init(context)
         val pm = context.packageManager
         // Its own label names the firmware rather than what it is ("T-UI" on TCL MT5879).
@@ -313,7 +319,7 @@ object AppCatalog {
                 val home = info.packageName in stockHomes
                 val later = whole != null && info.packageName !in whole
                 async {
-                    runCatching { entry(context, pm, info, leanback, byCategory, home, later) }
+                    runCatching { entry(context, pm, info, leanback, byCategory, home, later, theme) }
                         .onFailure { Log.w(TAG, "left ${info.packageName} out of Home", it) }
                         .getOrNull()?.let { if (home) it.copy(label = homeLabel) else it }
                         ?.let { e ->
@@ -323,7 +329,7 @@ object AppCatalog {
                         }
                 }
             }.awaitAll().filterNotNull()
-        }.plus(shortcuts(context, pm)).also {
+        }.plus(shortcuts(context, pm, theme)).also {
             val now = android.os.SystemClock.uptimeMillis()
             lastTiming = longArrayOf(started, queried, now)
             loaded = it
@@ -341,7 +347,7 @@ object AppCatalog {
      * (KidsHomeActivity on MiTV-MFTR0), it is not PatchWall's home screen, so Home Guard leaves it
      * in front; Home comes back to Aerial.
      */
-    private fun shortcuts(context: Context, pm: PackageManager): List<AppEntry> {
+    private fun shortcuts(context: Context, pm: PackageManager, theme: ThemeSelection): List<AppEntry> {
         val kids = Intent("android.intent.action.ENTER_KIDS_MODE").setPackage("com.mitv.tvhome")
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         val info = runCatching { pm.resolveActivity(kids, 0)?.activityInfo }.getOrNull()?.takeIf { it.exported } ?: return emptyList()
@@ -353,9 +359,9 @@ object AppCatalog {
                 leanback = false,
                 removable = false,
                 // A picture chosen on the phone page, as for apps (issue #530).
-                art = CustomIcons.load(KIDS_KEY)?.let {
+                art = CustomIcons.load(KIDS_KEY, theme.customId)?.let {
                     runCatching { TileArtFactory.fromBanner(android.graphics.drawable.BitmapDrawable(android.content.res.Resources.getSystem(), it)) }.getOrNull()
-                } ?: TileArtFactory.forSystem(SystemTile.Kids),
+                } ?: ThemePackArt.frame(context, theme.pack, TileArtFactory.forSystem(SystemTile.Kids)),
                 shortcut = kids,
             ),
         )
@@ -461,16 +467,17 @@ object AppCatalog {
 
     private fun entry(
         context: Context, pm: PackageManager, info: ActivityInfo, leanback: Boolean, byCategory: Map<String, SystemTile>,
-        stockHome: Boolean = false, later: Boolean = false,
+        stockHome: Boolean, later: Boolean, theme: ThemeSelection,
     ): AppEntry {
         val pkg = info.packageName
         // A picture chosen on the phone page changes the tile as much as an update does.
         // Drawn as the stock launcher or not is part of it too: the same package can be either.
-        val stamp = runCatching { pm.getPackageInfo(pkg, 0).lastUpdateTime }.getOrDefault(0L) + CustomIcons.stamp(pkg) +
+        val stamp = runCatching { pm.getPackageInfo(pkg, 0).lastUpdateTime }.getOrDefault(0L) + CustomIcons.stamp(pkg, theme.customId) +
             IconLibrary.stamp(pkg) + if (stockHome) 1 else 0
         // Offline library artwork must also be invalidated when the owner selects Own.
         val cacheKey = TileDiskCache.key(stamp) +
-            if (pkg in BundledIcons.assets) "|bundled-v2=${IconLibrary.uses(pkg)}" else ""
+            (if (theme == ThemeSelection()) "" else "|theme=${theme.pack.key}:${theme.customId.orEmpty()}") +
+            (if (pkg in BundledIcons.assets) "|bundled-v2=${IconLibrary.uses(pkg)}" else "")
         val system = (info.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
         val ownTile = if (stockHome) SystemTile.Home else if (system) SYSTEM_TILES[pkg] ?: byCategory[pkg] else null
         if (ownTile != null) drawnByAerial[pkg] = ownTile else drawnByAerial.remove(pkg)
@@ -496,12 +503,13 @@ object AppCatalog {
             // default robot), so it is drawn as Aerial's own.
             val own = if (stockHome) SystemTile.Home
                 else if (system) SYSTEM_TILES[pkg] ?: byCategory[pkg]?.takeIf { banner == null } else null
-            val custom = CustomIcons.load(pkg)
+            val custom = CustomIcons.load(pkg, theme.customId)
             val pick = IconLibrary.pick(pkg)
-            val library = if (custom == null && (pick == IconLibrary.Pick.Library ||
+            val themed = if (custom == null && pick == null) ThemePackArt.tile(context, theme.pack, pkg) else null
+            val library = if (custom == null && themed == null && (pick == IconLibrary.Pick.Library ||
                     pick == null && own == null && pkg !in BundledIcons.assets)) IconLibrary.load(pkg) else null
             // Explicit selections take priority over the offline default.
-            val bundled = if (custom == null && library == null && pick != IconLibrary.Pick.Own) BundledIcons.load(context, pkg) else null
+            val bundled = if (custom == null && themed == null && library == null && pick != IconLibrary.Pick.Own) BundledIcons.load(context, pkg) else null
             val recipe = TileRecipes.of(pkg)
             // A tile that cannot be drawn used to drop the app from Home altogether, without a word
             // in the log (com.fongmi.androidtv on TCL MT5879, issue #415). Its icon then, or
@@ -509,6 +517,7 @@ object AppCatalog {
             art = runCatching {
                 when {
                     custom != null -> TileArtFactory.fromBanner(android.graphics.drawable.BitmapDrawable(android.content.res.Resources.getSystem(), custom))
+                    themed != null -> TileArtFactory.fromBanner(themed)
                     library != null -> TileArtFactory.fromBanner(android.graphics.drawable.BitmapDrawable(android.content.res.Resources.getSystem(), library))
                     bundled != null -> TileArtFactory.fromBanner(bundled)
                     own != null -> TileArtFactory.forSystem(own)
@@ -520,7 +529,14 @@ object AppCatalog {
             }.recoverCatching {
                 Log.w(TAG, "could not draw the icon of $pkg either; using the default one", it)
                 TileArtFactory.fromIcon(pm.defaultActivityIcon, null)
-            }.also { bundled?.bitmap?.recycle() }.getOrThrow()
+            }.also {
+                custom?.recycle()
+                library?.recycle()
+                themed?.bitmap?.recycle()
+                bundled?.bitmap?.recycle()
+            }.getOrThrow().let {
+                if (custom == null && themed == null && pick == null) ThemePackArt.frame(context, theme.pack, it) else it
+            }
             synchronized(cache) { cache[pkg] = Cached(cacheKey, label, art) }
             runCatching { TileDiskCache.write(pkg, cacheKey, label, art) }
         }

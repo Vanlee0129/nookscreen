@@ -10,6 +10,8 @@ import android.util.Log
 import androidx.core.content.getSystemService
 import app.orchard.tv.apps.AppCatalog
 import app.orchard.tv.apps.BundledIcons
+import app.orchard.tv.settings.HomeThemes
+import app.orchard.tv.apps.ThemePackArt
 import app.orchard.tv.apps.FOLDER_KEY_PREFIX
 import app.orchard.tv.apps.AppEntry
 import app.orchard.tv.apps.AppNames
@@ -191,7 +193,7 @@ class PhoneServer private constructor(private val context: Context, private val 
                         else -> null
                     }
                     val choice = f["choice"]?.takeIf { it.isNotEmpty() }
-                    val ok = installed(pkg) && pick != null && (pick != IconLibrary.Pick.Library ||
+                    val ok = HomeThemes.activeSelection(context).customId == null && installed(pkg) && pick != null && (pick != IconLibrary.Pick.Library ||
                         IconLibrary.choices(pkg).any { choice == null || it.id == choice })
                     if (ok) {
                         CustomIcons.clear(pkg)
@@ -203,9 +205,12 @@ class PhoneServer private constructor(private val context: Context, private val 
                     json(state().put("saved", ok))
                 }
                 session.method == Method.POST && path == "/api/icon/reset" -> {
-                    val pkg = form(session)["app"].orEmpty()
-                    if (installed(pkg)) { CustomIcons.clear(pkg); onMain { CustomIcons.changed() } }
-                    json(state())
+                    val request = form(session)
+                    val pkg = request["app"].orEmpty()
+                    val theme = HomeThemes.activeSelection(context).customId
+                    val saved = installed(pkg) && (request["theme"] == null || request["theme"] == theme.orEmpty())
+                    if (saved) { CustomIcons.clear(pkg, theme); onMain { CustomIcons.changed() } }
+                    json(state().put("saved", saved))
                 }
                 session.method == Method.POST && path == "/api/weather/city" -> {
                     val name = form(session)["name"].orEmpty()
@@ -230,11 +235,15 @@ class PhoneServer private constructor(private val context: Context, private val 
     private fun state(): JSONObject {
         val list = JSONArray()
         val selected = Wallpapers.selectedId
+        val theme = HomeThemes.activeSelection(context)
+        val themeStamp = theme.hashCode()
         Wallpapers.items.forEach { w ->
             list.put(JSONObject().put("id", w.id).put("kind", w.kind.name.lowercase()).put("title", w.title).put("caption", w.caption ?: ""))
         }
         return JSONObject()
             .put("selected", selected)
+            .put("customThemeName", HomeThemes.activeName(context).orEmpty())
+            .put("customThemeId", theme.customId.orEmpty())
             .put("latestDaily", Wallpapers.LATEST_DAILY)
             .put("rotatePhotos", Wallpapers.ROTATE_PHOTOS)
             .put("screensaver", Wallpapers.screensaver.key)
@@ -259,21 +268,21 @@ class PhoneServer private constructor(private val context: Context, private val 
                     val look = SourceLooks.of(src.id)
                     val label = look?.let { it.name ?: it.device?.let { d -> context.getString(d.label) } } ?: src.label
                     // The stamp makes the phone fetch the tile again once its picture changes.
-                    put(JSONObject().put("key", a.key).put("label", label).put("default", src.label).put("custom", CustomIcons.has(a.key)).put("stamp", CustomIcons.stamp(a.key))
+                    put(JSONObject().put("key", a.key).put("label", label).put("default", src.label).put("custom", CustomIcons.has(a.key, theme.customId)).put("stamp", CustomIcons.stamp(a.key, theme.customId))
                         .put("source", true).put("port", src.label).put("name", look?.name ?: "").put("device", look?.device?.key ?: "").put("look", look.hashCode()))
                 }
                 apps.forEach { (a, label) ->
                     // [icon] is where the tile's picture comes from now; [library] whether the icon
                     // library has one for this app, which the phone can pick instead.
                     val icon = when {
-                        CustomIcons.has(a.key) -> "custom"
-                        IconLibrary.has(a.key) && AppCatalog.usesLibrary(a.key) -> "library"
+                        CustomIcons.has(a.key, theme.customId) -> "custom"
+                        IconLibrary.has(a.key) && AppCatalog.usesLibrary(a.key, theme.pack) -> "library"
                         else -> "own"
                     }
                     put(JSONObject().put("key", a.key).put("label", label).put("default", a.label).put("name", AppNames.of(a.key) ?: "")
-                        .put("custom", CustomIcons.has(a.key)).put("library", IconLibrary.has(a.key)).put("icon", icon)
+                        .put("custom", CustomIcons.has(a.key, theme.customId)).put("library", theme.customId == null && IconLibrary.has(a.key)).put("icon", icon)
                         .put("choices", libraryChoices(a.key, icon == "library"))
-                        .put("stamp", CustomIcons.stamp(a.key) + IconLibrary.stamp(a.key) + icon.hashCode()))
+                        .put("stamp", CustomIcons.stamp(a.key, theme.customId) + IconLibrary.stamp(a.key) + icon.hashCode() + themeStamp))
                 }
             })
             .put("layout", layoutState())
@@ -306,7 +315,7 @@ class PhoneServer private constructor(private val context: Context, private val 
             .put("kind", when { e.folder != null -> "folder"; e.source != null -> "source"; else -> "app" })
             // Folder and input art changes without a picture from the phone (contents, chosen
             // device), an app's with the icon library too.
-            .put("stamp", if (e.folder != null || e.source != null) e.art.hashCode().toLong() else CustomIcons.stamp(e.key) + IconLibrary.stamp(e.key))
+            .put("stamp", if (e.folder != null || e.source != null) e.art.hashCode().toLong() else HomeThemes.activeSelection(context).let { CustomIcons.stamp(e.key, it.customId) + IconLibrary.stamp(e.key) + it.hashCode() })
             .apply { e.folder?.let { put("id", it.id) }; e.source?.let { put("port", it.label) } }
         val folders = JSONObject()
         AppCatalog.folderApps.forEach { (id, apps) -> folders.put(id, JSONArray().apply { apps.forEach { put(tile(it)) } }) }
@@ -359,17 +368,15 @@ class PhoneServer private constructor(private val context: Context, private val 
         // saved picture or the pick directly, so the phone cannot cache the old tile under the new
         // versioned URL (a library pick showed the previous picture until the next change).
         val isApp = app.source == null && app.folder == null
-        val library = isApp && !own && IconLibrary.has(pkg)
-        val picked = when {
-            own || !isApp -> null
-            else -> CustomIcons.load(pkg)
-                ?: (if (library && AppCatalog.usesLibrary(pkg)) IconLibrary.load(pkg) else null)
-                ?: (if (IconLibrary.uses(pkg)) BundledIcons.load(context, pkg)?.bitmap else null)
-        }
-        val bmp = picked ?: run {
-            // The app's own art when asked for, or when the library has a picture it does not use.
-            val art = if (isApp && (own || library)) AppCatalog.ownArt(context, app) ?: app.art else app.art
-            TileArtFactory.flatten(art)
+        val theme = HomeThemes.activeSelection(context)
+        val pick = IconLibrary.pick(pkg)
+        val bmp = when {
+            !isApp -> TileArtFactory.flatten(app.art)
+            own -> TileArtFactory.flatten(AppCatalog.ownArt(context, app) ?: app.art)
+            else -> CustomIcons.load(pkg, theme.customId)
+                ?: (if (pick == null) ThemePackArt.tile(context, theme.pack, pkg)?.bitmap else null)
+                ?: (if (pick == IconLibrary.Pick.Library) IconLibrary.load(pkg) else null)
+                ?: TileArtFactory.flatten(app.art)
         }
         val out = ByteArrayOutputStream()
         bmp.compress(Bitmap.CompressFormat.JPEG, 85, out)
@@ -403,14 +410,17 @@ class PhoneServer private constructor(private val context: Context, private val 
     }
 
     private fun icon(session: IHTTPSession): Response {
+        val theme = HomeThemes.activeSelection(context).customId
         if (tooLarge(session)) return text(Response.Status.BAD_REQUEST, "too large")
         val files = HashMap<String, String>()
         session.parseBody(files)
+        val expectedTheme = session.parameters["theme"]?.firstOrNull()
+        if (expectedTheme != null && expectedTheme != theme.orEmpty()) return text(Response.Status.BAD_REQUEST, "theme changed")
         val pkg = session.parameters["app"]?.firstOrNull().orEmpty()
         if (!installed(pkg)) return text(Response.Status.BAD_REQUEST, "unknown app")
         val f = files.values.map(::File).firstOrNull { it.exists() && it.length() > 0 }
             ?: return text(Response.Status.BAD_REQUEST, "no picture")
-        val saved = f.inputStream().use { CustomIcons.save(pkg, it, context.cacheDir) }
+        val saved = f.inputStream().use { CustomIcons.save(pkg, it, context.cacheDir, theme) }
         if (saved) onMain { CustomIcons.changed() }
         return json(state().put("saved", saved))
     }

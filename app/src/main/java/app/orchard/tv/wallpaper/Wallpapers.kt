@@ -18,6 +18,8 @@ import app.orchard.tv.BuildConfig
 import app.orchard.tv.guard.GuardSetup
 import app.orchard.tv.settings.AerialSettings
 import app.orchard.tv.settings.DesktopScenes
+import app.orchard.tv.settings.ThemePack
+import app.orchard.tv.apps.ThemePackArt
 import app.orchard.tv.system.DiagLog
 import app.orchard.tv.ui.home.fileFramesJam
 import kotlinx.coroutines.CoroutineScope
@@ -255,6 +257,8 @@ object Wallpapers {
         }?.forEach { val kb = it.length() / 1024; if (it.delete()) Log.i(TAG, "removed a stale upload, $kb KB") }
     }
 
+    fun canSelect(id: String): Boolean = id == LATEST_DAILY || id == ROTATE_PHOTOS || items.any { it.id == id }
+
     fun select(id: String) {
         selectedId = id
         copySceneSelection(DesktopScenes.activeId(app))
@@ -359,7 +363,9 @@ object Wallpapers {
 
     /** Full picture at [w]×[h] without shading, for the photo screensaver. Call off the main thread. */
     fun picture(wp: Wallpaper, w: Int, h: Int): Bitmap? = when (wp.kind) {
-        WallpaperKind.Builtin -> Gradients.byKey(wp.id.removePrefix("grad:"))?.let { Gradients.render(it, w, h) }
+        WallpaperKind.Builtin -> if (wp.id.startsWith("theme:")) {
+            ThemePackArt.wallpaper(app, ThemePack.of(wp.id.removePrefix("theme:")), w, h)
+        } else Gradients.byKey(wp.id.removePrefix("grad:"))?.let { Gradients.render(it, w, h) }
         WallpaperKind.Daily, WallpaperKind.Photo -> fileFor(wp)?.takeIf { it.exists() }?.let { Images.decodeCover(it, w, h) }
         WallpaperKind.Auto -> null
         // Until a film has stopped on a frame, the first built-in stands in.
@@ -814,6 +820,9 @@ object Wallpapers {
         val daily = readDailyIndex().map { Wallpaper("daily:${it.first}", WallpaperKind.Daily, it.second, it.third) }
         val zh = Locale.getDefault().language == "zh"
         val builtins = Gradients.presets.map { Wallpaper("grad:${it.key}", WallpaperKind.Builtin, if (zh) it.nameZh else it.nameEn) }
+        val themes = ThemePack.entries.filter { it != ThemePack.Classic }.map {
+            Wallpaper(it.wallpaper, WallpaperKind.Builtin, app.getString(it.label))
+        }
         val photos = (photoDir.listFiles { f -> f.extension == "jpg" } ?: emptyArray())
             .sortedByDescending { it.lastModified() }
             .map { Wallpaper("photo:${it.nameWithoutExtension}", WallpaperKind.Photo, if (zh) "我的照片" else "My Photo") }
@@ -825,7 +834,7 @@ object Wallpapers {
             listOf(Wallpaper(VIDEOS, WallpaperKind.Video, if (zh) "我的视频 · 轮播" else "My Videos, In Turn")) +
                 films.map { Wallpaper(VIDEO_PREFIX + it.id, WallpaperKind.Video, it.name.substringBeforeLast('.').ifBlank { it.name }) }
         val inputs = sources.map { (id, name) -> Wallpaper(SOURCE_PREFIX + id, WallpaperKind.Source, name) }
-        items = listOf(live) + videos + daily + builtins + photos + auto + inputs
+        items = listOf(live) + videos + daily + builtins + themes + photos + auto + inputs
     }
 
     // ---- daily photos ----

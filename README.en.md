@@ -22,11 +22,19 @@ Open **Control Center → Desktop scenes** and duplicate the current layout. Set
 | :-- | :-- |
 | ![Dawn wallpaper with HDMI 1 and an app folder](docs/screenshots/morning.jpg) | ![Scene settings for wallpaper, favorite inputs and renaming](docs/screenshots/scenes.jpg) |
 
-## Artwork and wallpaper
+## Themes
 
-NookScreen includes 16:9 HD tiles for popular apps. Open **Personalize** and scan the phone setup code to upload wallpaper, videos, or custom artwork. Uploaded artwork takes priority.
+Open **Control Center → Themes** to preview Sanrio Strawberry Picnic, Marvel Comic Universe, or Classic. A theme applies the matching wallpaper and app artwork. Each desktop scene remembers its theme.
 
-![Nine HD tiles including Bilibili, Mi Video, Netflix, YouTube and Spotify](docs/screenshots/hd-tiles.png)
+To make a custom theme, choose a base pack and wallpaper, then select **Save current appearance**. Open Wallpaper and Personalization, scan the setup code, and upload per-app artwork to your theme. Saved themes can be reused across scenes.
+
+Each illustrated pack has 20 dedicated tiles for popular streaming, music, local playback and system apps. Other apps retain their recognizable artwork inside a matching frame. Uploaded and explicitly selected artwork takes priority.
+
+| Sanrio · Strawberry Picnic | Marvel · Comic Universe |
+| :-- | :-- |
+| ![Strawberry picnic wallpaper with pastel app tiles](docs/screenshots/sanrio-theme.jpg) | ![Midnight comic city wallpaper with red and gold app tiles](docs/screenshots/marvel-theme.jpg) |
+
+[Theme coverage and artwork notes](docs/themes.md)
 
 ## Updates
 

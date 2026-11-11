@@ -11,6 +11,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,6 +50,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -69,6 +71,7 @@ import app.orchard.tv.ui.components.consumeTaps
 import app.orchard.tv.ui.components.dismissOnTap
 import app.orchard.tv.ui.components.liquidGlass
 import app.orchard.tv.settings.AerialSettings
+import app.orchard.tv.settings.HomeThemes
 import app.orchard.tv.ui.components.smoothBackground
 import app.orchard.tv.ui.components.smoothBorder
 import app.orchard.tv.ui.components.smoothCut
@@ -100,6 +103,7 @@ fun MenuRow(
     focusRequester: FocusRequester? = null,
     destructive: Boolean = false,
     trailing: String? = null,
+    preview: ImageBitmap? = null,
 ) {
     Pressable(onClick = onClick, focusRequester = focusRequester, focusedScale = 1.03f, modifier = modifier.fillMaxWidth()) { state ->
         val bg by animateColorAsState(
@@ -114,12 +118,14 @@ fun MenuRow(
             Modifier
                 .fillMaxWidth()
                 .smoothBackground({ bg }, 12.dp)
-                .height(44.dp)
+                .height(if (preview != null) 62.dp else 44.dp)
                 .padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            GlyphIcon(glyph, fg, 18.dp)
+            if (preview == null) GlyphIcon(glyph, fg, 18.dp)
+            else Image(preview, contentDescription = null, contentScale = ContentScale.Crop,
+                modifier = Modifier.size(76.dp, 43.dp).clip(RoundedCornerShape(6.dp)))
             BasicText(text, style = Type.Body.copy(color = fg), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
             if (trailing != null) {
                 BasicText(
@@ -176,7 +182,8 @@ fun AppMenu(
     val holder = folders.firstOrNull { shownApp.key in it.apps }
     // A look at the disk (and a hash, for an input): once per app, not on each recomposition of the
     // menu as it grows in.
-    val customIcon = remember(shownApp.key, CustomIcons.version) { CustomIcons.has(shownApp.key) }
+    val theme = HomeThemes.activeSelection(LocalContext.current).customId
+    val customIcon = remember(shownApp.key, CustomIcons.version, theme) { CustomIcons.has(shownApp.key, theme) }
 
     BackHandler(enabled = visible) { if (page != MenuPage.Main) page = MenuPage.Main else onDismiss() }
     LaunchedEffect(visible, page) {

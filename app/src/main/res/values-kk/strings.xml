@@ -330,4 +330,21 @@
     <string name="cc_update_check">Жаңартуларды тексеру</string>
     <string name="cc_update_auto">Автоматты жаңарту</string>
     <string name="cc_update_releases">NookScreen шығарылымдарын ашу үшін кодты сканерлеңіз.</string>
+
+    <string name="theme_title">Тақырыптар</string>
+    <string name="theme_save">Ағымдағы көріністі сақтау</string>
+    <string name="theme_saved">Менің тақырыптарым</string>
+    <string name="theme_manage">Өз тақырыптарымды басқару</string>
+    <string name="theme_name">Тақырып атауы</string>
+    <string name="theme_rename">Тақырып атауын өзгерту</string>
+    <string name="theme_update">Ағымдағы көрініспен ауыстыру</string>
+    <string name="theme_delete">Тақырыпты жою</string>
+    <string name="theme_update_confirm">«%1$s» тақырыбының көрінісі ауыстырылсын ба?</string>
+    <string name="theme_delete_confirm">«%1$s» тақырыбы жойылсын ба?</string>
+    <string name="theme_wallpaper_missing">Бұл тақырыптың тұсқағазы қолжетімсіз.</string>
+    <string name="theme_classic">Классика</string>
+    <string name="theme_sanrio">Sanrio · Құлпынай серуені</string>
+    <string name="theme_marvel">Marvel · Комикстер әлемі</string>
+    <string name="theme_upload_hint">Осы тақырыпқа белгішелер жүктеу үшін тұсқағаз баптауларын ашып, кодты сканерлеңіз.</string>
+    <string name="theme_copy_failed">Тақырып белгішелерін көшіру мүмкін болмады.</string>
 </resources>

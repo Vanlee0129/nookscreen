@@ -9,6 +9,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import android.graphics.Bitmap
 import android.graphics.Color
+import app.orchard.tv.settings.ThemePack
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -29,6 +30,23 @@ class BundledIconsTest {
     @Test fun separateAppsHaveSeparateArtwork() {
         assertEquals(BundledIcons.assets.size, BundledIcons.assets.values.toSet().size)
         assertNotEquals(BundledIcons.assets["com.mitv.gallery"], BundledIcons.assets["com.xiaomi.tv.gallery"])
+    }
+
+    @Test fun themePacksHaveArtworkForAllMappedAppsAndAFallbackForUnmappedApps() {
+        val context = RuntimeEnvironment.getApplication()
+        for (pack in listOf(ThemePack.Sanrio, ThemePack.Marvel)) {
+            for (pkg in ThemePackArt.tiles.keys) {
+                val art = requireNotNull(ThemePackArt.tile(context, pack, pkg)) { "${pack.key}/$pkg" }
+                assertEquals(16 * art.bitmap.height, 9 * art.bitmap.width)
+                art.bitmap.recycle()
+            }
+            val wallpaper = requireNotNull(ThemePackArt.wallpaper(context, pack, 384, 216))
+            assertEquals(384, wallpaper.width)
+            wallpaper.recycle()
+            assertFalse(ThemePackArt.hasTile(pack, "org.jellyfin.androidtv"))
+            val original = TileArtFactory.forSystem(SystemTile.Media)
+            assertNotSame(original, ThemePackArt.frame(context, pack, original))
+        }
     }
 
     @Test fun reductionAveragesFineDetailInsteadOfDroppingAlternatePixels() {

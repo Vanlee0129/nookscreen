@@ -1127,7 +1127,7 @@ fun HomeScreen(
             visible = overlay is Overlay.Wallpaper,
             onSettled = { sheetIn = it },
             warm = sheetWarm,
-            onDismiss = { vm.overlay = Overlay.ControlCenter() },
+            onDismiss = { vm.overlay = Overlay.ControlCenter(CcPage.Themes) },
             hiddenCount = vm.hiddenApps.size,
             onHiddenApps = { vm.whenUnlocked { vm.overlay = Overlay.HiddenApps } },
             // Locking needs nothing; unlocking, the PIN where one is set.

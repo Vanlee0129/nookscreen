@@ -27,6 +27,9 @@ import app.orchard.tv.apps.folderEntry
 import app.orchard.tv.apps.sourceEntry
 import app.orchard.tv.settings.AerialSettings
 import app.orchard.tv.settings.DesktopScenes
+import app.orchard.tv.settings.HomeThemes
+import app.orchard.tv.settings.ThemeSelection
+import app.orchard.tv.settings.ThemeLook
 import app.orchard.tv.settings.Restricted
 import app.orchard.tv.system.XgimiBoost
 import app.orchard.tv.system.Brightness
@@ -68,7 +71,7 @@ sealed interface Overlay {
     data object Kids : Overlay
 }
 
-enum class CcPage { Main, Inputs, InputSettings, Scenes, SceneEdit, SceneSources, Update, Setup }
+enum class CcPage { Main, Inputs, InputSettings, Scenes, SceneEdit, SceneSources, Themes, ThemeManage, Update, Setup }
 
 /**
  * Tiles a cold start reads whole before showing Home (two rows and a half, as many as can show);
@@ -82,6 +85,8 @@ private val BOOT_CATCH_UP_MS = listOf(60_000L, 180_000L)
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
     private val context get() = getApplication<Application>()
     val desktopScenes = DesktopScenes(app)
+    val homeThemes = HomeThemes(app)
+    var themeReturnPage = CcPage.Main; private set
     private var store = LayoutStore(app, desktopScenes.active)
     private var all: List<AppEntry> = emptyList()
 
@@ -245,9 +250,10 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     /** PackageManager's change counter when the list was last loaded (Android 8+). */
     private var packagesSeen = 0
-    private var catalogConfig: Triple<String, Int, Boolean>? = null
-    private fun currentCatalogConfig() = Triple(
-        java.util.Locale.getDefault().toLanguageTag(), TileArtFactory.W, TileArtFactory.unified,
+    private data class CatalogConfig(val language: String, val width: Int, val unified: Boolean, val theme: ThemeSelection)
+    private var catalogConfig: CatalogConfig? = null
+    private fun currentCatalogConfig() = CatalogConfig(
+        java.util.Locale.getDefault().toLanguageTag(), TileArtFactory.W, TileArtFactory.unified, homeThemes.selection,
     )
 
     /**
@@ -360,7 +366,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                 val wait = at - SystemClock.elapsedRealtime()
                 if (wait <= 0) continue
                 delay(wait)
+                val config = currentCatalogConfig()
                 val again = AppCatalog.load(context)
+                if (config != currentCatalogConfig()) continue
                 if (again.map { it.key }.toSet() == all.map { it.key }.toSet()) continue
                 DiagLog.i("${again.size - all.size} more apps a while into the boot")
                 all = again
@@ -415,6 +423,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             store.copyTo(id)
             AerialSettings.copyScenePins(id)
             Wallpapers.copySceneSelection(id)
+            homeThemes.copyStyle(id)
         }
         restoreScene()
         overlay = Overlay.ControlCenter(CcPage.SceneEdit)
@@ -436,18 +445,74 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         store.removeScene(id)
         AerialSettings.removeScenePins(id)
         Wallpapers.removeSceneSelection(id)
+        homeThemes.removeScene(id)
         restoreScene()
         overlay = Overlay.ControlCenter(CcPage.Scenes)
     }
 
     private fun restoreScene() {
+        val previousTheme = homeThemes.selection
         store = LayoutStore(context, desktopScenes.active)
         folderArt.clear()
         AerialSettings.restoreScenePins()
         Wallpapers.restoreSceneSelection()
+        homeThemes.restoreStyle()
         arrange()
         prepareFaces()
+        if (homeThemes.selection != previousTheme) reload()
         homeResetPending = true
+    }
+
+    fun openThemes(from: CcPage) {
+        if (!loaded || Restricted.active) return
+        themeReturnPage = from
+        overlay = Overlay.ControlCenter(CcPage.Themes)
+    }
+
+    fun currentLook() = ThemeLook(Wallpapers.selectedId, homeThemes.selection.pack)
+
+    fun applyTheme(look: ThemeLook, customId: String? = null) {
+        if (Restricted.active) return
+        val wallpaperAvailable = Wallpapers.canSelect(look.wallpaper)
+        if (wallpaperAvailable && look.wallpaper != Wallpapers.selectedId) Wallpapers.select(look.wallpaper)
+        selectTheme(ThemeSelection(look.pack, customId))
+        overlay = Overlay.None
+        if (!wallpaperAvailable) notify(context.getString(R.string.theme_wallpaper_missing), Glyph.Photo)
+    }
+
+    fun createTheme(name: String) {
+        if (name.isBlank() || Restricted.active) return
+        val scene = desktopScenes.active
+        val look = currentLook()
+        val from = homeThemes.selection.customId
+        val id = java.util.UUID.randomUUID().toString()
+        viewModelScope.launch {
+            if (from != null) {
+                val copied = withContext(Dispatchers.IO) { runCatching { CustomIcons.copyTheme(from, id) }.isSuccess }
+                if (!copied) {
+                    withContext(Dispatchers.IO) { CustomIcons.deleteTheme(id) }
+                    notify(context.getString(R.string.theme_copy_failed), Glyph.Photo)
+                    return@launch
+                }
+            }
+            val saved = homeThemes.create(name, look, id) ?: return@launch
+            if (desktopScenes.active == scene && currentLook() == look && homeThemes.selection.customId == from) {
+                selectTheme(ThemeSelection(look.pack, saved.id))
+            }
+        }
+    }
+
+    fun deleteTheme(id: String) {
+        val previous = homeThemes.selection
+        homeThemes.delete(id)
+        if (homeThemes.selection != previous) reload()
+        viewModelScope.launch(Dispatchers.IO) { CustomIcons.deleteTheme(id) }
+    }
+
+    private fun selectTheme(next: ThemeSelection) {
+        if (next == homeThemes.selection) return
+        homeThemes.select(next)
+        reload()
     }
 
     /** Each input intent's player package, by the intent's URI: resolving it is a PackageManager query. */
@@ -525,7 +590,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     /** Drops the picture chosen on the phone page; the tile goes back to the app's own artwork. */
     fun resetIcon(key: String) {
         viewModelScope.launch {
-            withContext(Dispatchers.IO) { CustomIcons.clear(key) }
+            val theme = homeThemes.selection.customId
+            withContext(Dispatchers.IO) { CustomIcons.clear(key, theme) }
             CustomIcons.changed()
         }
     }

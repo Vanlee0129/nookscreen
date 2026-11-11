@@ -149,6 +149,8 @@ fun ControlCenter(
             CcPage.Update, CcPage.Setup, CcPage.Scenes -> vm.overlay = Overlay.ControlCenter(CcPage.Main)
             CcPage.SceneEdit -> vm.overlay = Overlay.ControlCenter(CcPage.Scenes)
             CcPage.SceneSources -> vm.overlay = Overlay.ControlCenter(CcPage.SceneEdit)
+            CcPage.Themes -> vm.overlay = Overlay.ControlCenter(vm.themeReturnPage)
+            CcPage.ThemeManage -> vm.overlay = Overlay.ControlCenter(CcPage.Themes)
         }
     }
 
@@ -218,6 +220,7 @@ fun ControlCenter(
                             CcPage.Inputs -> InputsPage(vm, visible, onOpen)
                             CcPage.InputSettings -> InputSettingsPage(vm, visible)
                             CcPage.Scenes, CcPage.SceneEdit, CcPage.SceneSources -> ScenePage(vm, p, visible && p == page)
+                            CcPage.Themes, CcPage.ThemeManage -> ThemePage(vm, p, visible && p == page)
                             CcPage.Update -> UpdatePage(vm, visible)
                             CcPage.Setup -> SetupPage(vm, visible, onOpen)
                         }
@@ -383,13 +386,13 @@ private fun MainPage(
                 onClick = { Restricted.start(); vm.overlay = Overlay.None },
             )
         }
-        // How Home looks (wallpaper, screensaver, focus style, hidden apps, weather) lives in one place.
-        MenuRow(
-            Glyph.Photo,
-            stringResource(R.string.cc_personalize),
-            onClick = { vm.overlay = Overlay.Wallpaper },
-        )
         if (vm.loaded) {
+            MenuRow(
+                Glyph.Photo,
+                stringResource(R.string.theme_title),
+                onClick = { vm.openThemes(CcPage.Main) },
+                trailing = "›",
+            )
             MenuRow(
                 Glyph.Home,
                 stringResource(R.string.scene_title),

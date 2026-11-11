@@ -338,4 +338,21 @@
     <string name="cc_update_check">Check for updates</string>
     <string name="cc_update_auto">Automatic updates</string>
     <string name="cc_update_releases">Scan to open NookScreen releases.</string>
+
+    <string name="theme_title">Themes</string>
+    <string name="theme_save">Save current appearance</string>
+    <string name="theme_saved">My themes</string>
+    <string name="theme_manage">Manage custom themes</string>
+    <string name="theme_name">Theme name</string>
+    <string name="theme_rename">Rename theme</string>
+    <string name="theme_update">Replace with current appearance</string>
+    <string name="theme_delete">Delete theme</string>
+    <string name="theme_update_confirm">Replace the appearance saved in “%1$s”?</string>
+    <string name="theme_delete_confirm">Delete “%1$s”?</string>
+    <string name="theme_wallpaper_missing">This theme’s wallpaper is unavailable.</string>
+    <string name="theme_classic">Classic</string>
+    <string name="theme_sanrio">Sanrio · Strawberry Picnic</string>
+    <string name="theme_marvel">Marvel · Comic Universe</string>
+    <string name="theme_upload_hint">Open Wallpaper and Personalization, then scan the phone setup code to upload icons for this theme.</string>
+    <string name="theme_copy_failed">Could not copy the theme icons.</string>
 </resources>

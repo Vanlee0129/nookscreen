@@ -337,4 +337,21 @@
     <string name="cc_update_check">检查更新</string>
     <string name="cc_update_auto">自动更新</string>
     <string name="cc_update_releases">扫码查看栖屏发布版本。</string>
+
+    <string name="theme_title">主题</string>
+    <string name="theme_save">保存当前外观为主题</string>
+    <string name="theme_saved">我的主题</string>
+    <string name="theme_manage">管理自定义主题</string>
+    <string name="theme_name">主题名称</string>
+    <string name="theme_rename">重命名主题</string>
+    <string name="theme_update">用当前外观更新</string>
+    <string name="theme_delete">删除主题</string>
+    <string name="theme_update_confirm">用当前外观更新「%1$s」？</string>
+    <string name="theme_delete_confirm">删除「%1$s」？</string>
+    <string name="theme_wallpaper_missing">此主题的壁纸已不可用。</string>
+    <string name="theme_classic">经典</string>
+    <string name="theme_sanrio">三丽鸥 · 草莓野餐</string>
+    <string name="theme_marvel">漫威 · 漫画宇宙</string>
+    <string name="theme_upload_hint">打开「壁纸与个性化」并扫描设置二维码，即可为当前主题上传应用图标。</string>
+    <string name="theme_copy_failed">未能复制主题图标。</string>
 </resources>

@@ -43,36 +43,61 @@ object CustomIcons {
     }
 
     /** By package name; a pinned input's key holds slashes, so it goes by a hash of the key. */
-    private fun fileFor(pkg: String) = if (isValidKey(pkg)) File(dir, "$pkg.png") else File(dir, "input-${hash(pkg)}.png")
+    private fun directory(theme: String?): File = if (theme == null) dir else File(dir, "themes/$theme")
+
+    private fun fileFor(pkg: String, theme: String?): File =
+        File(directory(theme), if (isValidKey(pkg)) "$pkg.png" else "input-${hash(pkg)}.png")
+
+    private fun selectedFile(pkg: String, theme: String?): File =
+        theme?.let { fileFor(pkg, it).takeIf(File::isFile) } ?: fileFor(pkg, null)
 
     private fun hash(key: String): String =
         java.security.MessageDigest.getInstance("SHA-1").digest(key.toByteArray()).joinToString("") { "%02x".format(it) }
 
-    fun has(pkg: String): Boolean = ::dir.isInitialized && fileFor(pkg).exists()
+    fun has(pkg: String, theme: String? = null): Boolean = ::dir.isInitialized && fileFor(pkg, theme).isFile
 
     /** When the app's picture last changed; 0 without one. Part of the tile cache's key. */
-    fun stamp(pkg: String): Long = if (::dir.isInitialized) fileFor(pkg).lastModified() else 0L
+    fun stamp(pkg: String, theme: String? = null): Long = if (::dir.isInitialized) selectedFile(pkg, theme).lastModified() else 0L
 
     /** The app's picture at tile size, or null. Off the main thread. */
-    fun load(pkg: String): Bitmap? = if (has(pkg)) BitmapFactory.decodeFile(fileFor(pkg).path) else null
+    fun load(pkg: String, theme: String? = null): Bitmap? =
+        if (::dir.isInitialized) selectedFile(pkg, theme).takeIf(File::isFile)?.let { BitmapFactory.decodeFile(it.path) } else null
 
     /** Stores [input] as the app's picture. Off the main thread; false if it is not an image. */
-    fun save(pkg: String, input: InputStream, cacheDir: File): Boolean {
+    fun save(pkg: String, input: InputStream, cacheDir: File, theme: String? = null): Boolean {
         val tmp = File.createTempFile("icon", ".bin", cacheDir)
         return try {
             tmp.outputStream().use { input.copyTo(it) }
             val bmp = Images.decodeCover(tmp, W, H) ?: return false
-            fileFor(pkg).outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
-            bmp.recycle()
+            val target = fileFor(pkg, theme)
+            target.parentFile?.mkdirs()
+            val atomic = android.util.AtomicFile(target)
+            val output = atomic.startWrite()
+            try {
+                check(bmp.compress(Bitmap.CompressFormat.PNG, 100, output))
+                atomic.finishWrite(output)
+            } catch (e: Exception) {
+                atomic.failWrite(output)
+                throw e
+            } finally {
+                bmp.recycle()
+            }
             true
         } finally {
             tmp.delete()
         }
     }
 
-    fun clear(pkg: String) {
-        fileFor(pkg).delete()
+    fun clear(pkg: String, theme: String? = null) {
+        android.util.AtomicFile(fileFor(pkg, theme)).delete()
     }
+
+    fun copyTheme(from: String, to: String) {
+        val source = directory(from)
+        if (source.isDirectory) check(source.copyRecursively(directory(to)))
+    }
+
+    fun deleteTheme(id: String) { directory(id).deleteRecursively() }
 
     /** Called on the main thread after a save or clear. */
     fun changed() {

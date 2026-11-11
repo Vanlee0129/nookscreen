@@ -330,4 +330,21 @@
     <string name="cc_update_check">Проверить обновления</string>
     <string name="cc_update_auto">Автоматическое обновление</string>
     <string name="cc_update_releases">Отсканируйте код, чтобы открыть релизы NookScreen.</string>
+
+    <string name="theme_title">Темы</string>
+    <string name="theme_save">Сохранить текущее оформление</string>
+    <string name="theme_saved">Мои темы</string>
+    <string name="theme_manage">Управление своими темами</string>
+    <string name="theme_name">Название темы</string>
+    <string name="theme_rename">Переименовать тему</string>
+    <string name="theme_update">Обновить текущим оформлением</string>
+    <string name="theme_delete">Удалить тему</string>
+    <string name="theme_update_confirm">Заменить оформление темы «%1$s»?</string>
+    <string name="theme_delete_confirm">Удалить «%1$s»?</string>
+    <string name="theme_wallpaper_missing">Обои этой темы недоступны.</string>
+    <string name="theme_classic">Классика</string>
+    <string name="theme_sanrio">Sanrio · Клубничный пикник</string>
+    <string name="theme_marvel">Marvel · Мир комиксов</string>
+    <string name="theme_upload_hint">Откройте настройки обоев и отсканируйте код, чтобы загрузить значки для этой темы.</string>
+    <string name="theme_copy_failed">Не удалось скопировать значки темы.</string>
 </resources>

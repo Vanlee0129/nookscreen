@@ -833,6 +833,25 @@ object TileArtFactory {
         return out
     }
 
+    /** Keeps the app's original artwork recognizable in a pack with no dedicated tile for it. */
+    fun withThemeFrame(art: TileArt, background: Bitmap, trim: Int): TileArt {
+        val back = createBitmap(W, H)
+        val original = flatten(art)
+        val bounds = RectF(W * 0.09f, H * 0.09f, W * 0.91f, H * 0.91f)
+        val corner = H * 0.075f
+        Canvas(back).apply {
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+            drawBitmap(background, null, RectF(0f, 0f, W.toFloat(), H.toFloat()), paint)
+            drawRoundRect(RectF(bounds).apply { inset(-H * 0.019f, -H * 0.019f) }, corner, corner, paint.apply { color = trim })
+            save()
+            clipPath(android.graphics.Path().apply { addRoundRect(bounds, corner, corner, android.graphics.Path.Direction.CW) })
+            drawBitmap(original, null, bounds, paint)
+            restore()
+        }
+        original.recycle()
+        return finish(back, null)
+    }
+
     /** [iw]×[ih] is the size [d] is scaled from: its pixels for a bitmap, whatever density it was loaded at. */
     private fun Canvas.drawCover(
         d: Drawable, w: Int, h: Int,

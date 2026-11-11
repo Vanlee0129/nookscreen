@@ -330,4 +330,21 @@
     <string name="cc_update_check">Перевірити оновлення</string>
     <string name="cc_update_auto">Автоматичні оновлення</string>
     <string name="cc_update_releases">Відскануйте код, щоб відкрити випуски NookScreen.</string>
+
+    <string name="theme_title">Теми</string>
+    <string name="theme_save">Зберегти поточне оформлення</string>
+    <string name="theme_saved">Мої теми</string>
+    <string name="theme_manage">Керувати власними темами</string>
+    <string name="theme_name">Назва теми</string>
+    <string name="theme_rename">Перейменувати тему</string>
+    <string name="theme_update">Замінити поточним оформленням</string>
+    <string name="theme_delete">Видалити тему</string>
+    <string name="theme_update_confirm">Замінити оформлення теми «%1$s»?</string>
+    <string name="theme_delete_confirm">Видалити «%1$s»?</string>
+    <string name="theme_wallpaper_missing">Шпалери цієї теми недоступні.</string>
+    <string name="theme_classic">Класика</string>
+    <string name="theme_sanrio">Sanrio · Полуничний пікнік</string>
+    <string name="theme_marvel">Marvel · Світ коміксів</string>
+    <string name="theme_upload_hint">Відкрийте налаштування шпалер і відскануйте код, щоб завантажити значки для цієї теми.</string>
+    <string name="theme_copy_failed">Не вдалося скопіювати значки теми.</string>
 </resources>

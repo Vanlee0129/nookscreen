@@ -102,7 +102,7 @@ internal fun ScenePage(vm: HomeViewModel, page: CcPage, takeFocus: Boolean) {
             }
             CcPage.SceneEdit -> {
                 MenuRow(Glyph.ChevronLeft, active.name, { show(CcPage.Scenes) })
-                MenuRow(Glyph.Photo, stringResource(R.string.scene_wallpaper), { vm.overlay = Overlay.Wallpaper }, focusRequester = first, trailing = "›")
+                MenuRow(Glyph.Photo, stringResource(R.string.theme_title), { vm.openThemes(CcPage.SceneEdit) }, focusRequester = first, trailing = "›")
                 MenuRow(Glyph.Input, stringResource(R.string.scene_sources), { show(CcPage.SceneSources) }, trailing = "›")
                 MenuRow(Glyph.Pencil, stringResource(R.string.scene_rename), { pending = SceneDialog.Rename })
                 if (active.id != DesktopScenes.ORIGINAL) {
