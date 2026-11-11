@@ -7,7 +7,6 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -19,10 +18,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.BasicText
@@ -89,7 +85,7 @@ import kotlin.random.Random
  * - Aerial: Apple TV's aerial films, streamed from Apple, with the place named as the camera moves.
  * - Photos: the owner's own photos (the daily ones when there are none), slowly drifting, each
  *   with where it was taken.
- * - Clock: a large clock over the wallpaper, moving once a minute so nothing burns in.
+ * - Clock: a large clock over the wallpaper, with a small drift to protect the screen.
  * - Videos: the owner's local films, uploaded from the phone page, playing silently offline.
  *
  * If the films cannot be reached, Aerial falls back to Photos. Left and right step to the previous
@@ -382,7 +378,7 @@ private fun Labels(
 /**
  * How far the screensaver's words have wandered from their place: a little, somewhere new every
  * two minutes and eased over seconds, so nothing sits on the same pixels all night (OLED panels,
- * issue #416). Too little to read as movement; the clock screensaver moves its clock by itself.
+ * issue #416).
  */
 @Composable
 internal fun saverDrift(now: LocalDateTime): DpOffset {
@@ -710,43 +706,37 @@ private fun PhotoSaver(
     Labels(wp?.let(::stillCaption), now, showTime = carried == null || image != null)
 }
 
-/** A large clock that moves once a minute over the wallpaper or the apps' light. */
+/** Keep the clock at the chosen corner, with a small, eased drift for burn-in protection. */
 @Composable
 private fun ClockSaver(apps: List<AppEntry>, now: LocalDateTime) {
+    val wallpaper = Wallpapers.backdrop
     val minute = now.withSecond(0).withNano(0)
-    val scene = remember(minute, apps.size, Wallpapers.backdrop) {
-        val rnd = Random(minute.hashCode())
-        Scene(
-            light = Wallpapers.backdrop ?: apps.takeIf { it.isNotEmpty() }?.get(rnd.nextInt(apps.size))?.art?.backdrop,
-            x = rnd.nextFloat(),
-            y = rnd.nextFloat(),
-        )
+    val light = wallpaper ?: remember(minute, apps.size) {
+        apps.takeIf { it.isNotEmpty() }?.let { it[Random(minute.hashCode()).nextInt(it.size)].art.backdrop }
     }
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val w = maxWidth
-        val h = maxHeight
-        // The light apart from the clock: with a wallpaper it is the same picture every minute, and
-        // crossfaded against itself it dimmed for two seconds each time the clock moved. Opaque
-        // (black under it), so a new one can fade in over the old.
-        Dissolve(targetState = scene.light, durationMs = 2400, easing = Motion.EaseInOut, modifier = Modifier.fillMaxSize(), label = "clock-light") { light ->
+    val alignEnd = AerialSettings.clockRight
+    val drift = saverDrift(now)
+
+    Box(Modifier.fillMaxSize()) {
+        // Crossfade only the light when it changes. The clock stays mounted across minute ticks.
+        Dissolve(targetState = light, durationMs = 2400, easing = Motion.EaseInOut, modifier = Modifier.fillMaxSize(), label = "clock-light") { background ->
             Canvas(Modifier.fillMaxSize()) {
                 drawRect(Color.Black)
-                if (light != null) {
-                    drawImage(light, dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()), filterQuality = FilterQuality.Low, alpha = 0.75f)
+                if (background != null) {
+                    drawImage(background, dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()), filterQuality = FilterQuality.Low, alpha = 0.75f)
                 }
             }
         }
-        Crossfade(targetState = scene, animationSpec = tween(2400, easing = Motion.EaseInOut), label = "clock-scene") { s ->
-            Box(Modifier.fillMaxSize()) {
-                Column(
-                    Modifier.offset(
-                        x = 64.dp + (w - 64.dp * 2 - 420.dp) * s.x,
-                        y = 56.dp + (h - 56.dp * 2 - 170.dp) * s.y,
-                    ),
-                ) { ShelfClock(now = now) }
-            }
-        }
+        ShelfClock(
+            now = now,
+            modifier = Modifier
+                .align(if (alignEnd) Alignment.TopEnd else Alignment.TopStart)
+                .padding(top = 56.dp, start = 64.dp, end = 64.dp)
+                .graphicsLayer {
+                    translationX = drift.x.toPx() / 3f
+                    translationY = drift.y.toPx() / 3f
+                },
+            alignEnd = alignEnd,
+        )
     }
 }
-
-private data class Scene(val light: ImageBitmap?, val x: Float, val y: Float)

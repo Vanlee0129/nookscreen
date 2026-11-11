@@ -1,6 +1,6 @@
 # 栖屏主题包
 
-每套插画主题包含一张电视壁纸和 20 张专属磁贴。其余应用会保留原有应用图案并使用主题边框。用户上传和明确选定的图标优先。每个桌面场景记住它应用的主题和壁纸。
+每套插画主题包含一张电视壁纸和 25 张专属磁贴。其余应用会保留原有应用图案并使用主题边框。用户上传和明确选定的图标优先。每个桌面场景记住它应用的主题和壁纸。
 
 | 类型 | 专属磁贴 |
 | --- | --- |
@@ -9,6 +9,7 @@
 | 音乐和卡拉 OK | Spotify、网易云音乐、全民 K 歌 |
 | 本地媒体 | Plex、Kodi、VLC |
 | 系统工具 | 天气、相册、设置、电视设置 |
+| 小米电视工具 | 小爱同学、日历、应用中心、无线投屏、米家 |
 
 Jellyfin、其他电视厂商的工具和其余已安装应用使用边框适配。应用范围参考 [Android TV 应用展示](https://www.android.com/intl/en_in/tv/)、[当贝电视软件热门榜](https://www.dangbei.com/app/hot/) 以及 [Jellyfin Android TV](https://play.google.com/store/apps/details?id=org.jellyfin.androidtv)。
 

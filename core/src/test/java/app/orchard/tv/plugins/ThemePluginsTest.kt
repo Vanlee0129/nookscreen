@@ -52,13 +52,15 @@ class ThemePluginsTest {
     @Test fun independentUpdatePreservesEnablementAndRejectsIncompatibleReplacement() {
         val store = ThemePlugins.of(context)
         assertEquals(PluginResult.Installed, artifact().inputStream().use { store.install(it, "sanrio") })
+        val installedVersion = store.installed.value.getValue("sanrio").manifest.version
+        val nextVersion = installedVersion + 1
         assertTrue(store.setEnabled("sanrio", false))
-        assertEquals(PluginResult.Incompatible, revised(3, 2).inputStream().use { store.install(it) })
-        assertEquals(PluginResult.Invalid, revised(2).inputStream().use { store.install(it, "marvel") })
-        assertEquals(1, store.installed.value.getValue("sanrio").manifest.version)
-        assertEquals(PluginResult.Installed, revised(2).inputStream().use { store.install(it) })
+        assertEquals(PluginResult.Incompatible, revised(nextVersion + 1, 2).inputStream().use { store.install(it) })
+        assertEquals(PluginResult.Invalid, revised(nextVersion).inputStream().use { store.install(it, "marvel") })
+        assertEquals(installedVersion, store.installed.value.getValue("sanrio").manifest.version)
+        assertEquals(PluginResult.Installed, revised(nextVersion).inputStream().use { store.install(it) })
         val reopened = ThemePlugins(context).installed.value.getValue("sanrio")
-        assertEquals(2, reopened.manifest.version)
+        assertEquals(nextVersion, reopened.manifest.version)
         assertFalse(reopened.enabled)
         assertEquals(PluginResult.Unchanged, artifact().inputStream().use { store.install(it) })
     }

@@ -43,7 +43,7 @@ On v0.0.3, the TV path is **Control Center → Themes → Plugins**. When upgrad
 | --- | --- |
 | ![Strawberry picnic wallpaper and pastel app tiles](docs/screenshots/sanrio-theme.jpg) | ![Comic city wallpaper and red-and-gold app tiles](docs/screenshots/marvel-theme.jpg) |
 
-Each pack has 20 dedicated tiles. Other apps keep their artwork with a matching frame, and uploaded or explicitly selected icons take priority. Disabling or removing a theme restores classic tiles and uses the built-in Aurora wallpaper where a theme wallpaper is missing. Photos, icons and scenes are retained. [Theme coverage and artwork notes](docs/themes.md)
+Each pack has 25 dedicated tiles. Other apps keep their artwork with a matching frame, and uploaded or explicitly selected icons take priority. Disabling or removing a theme restores classic tiles and uses the built-in Aurora wallpaper where a theme wallpaper is missing. Photos, icons and scenes are retained. [Theme coverage and artwork notes](docs/themes.md)
 
 ### Save your own look
 

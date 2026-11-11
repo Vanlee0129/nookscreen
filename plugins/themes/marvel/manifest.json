@@ -2,7 +2,7 @@
   "schema": 1,
   "kind": "theme",
   "id": "marvel",
-  "version": 1,
+  "version": 2,
   "minApi": 1,
   "maxApi": 1,
   "name": "Marvel",
@@ -30,6 +30,11 @@
     "com.plexapp.android": "plex.jpg",
     "org.xbmc.kodi": "kodi.jpg",
     "org.videolan.vlc": "vlc.jpg",
-    "com.spotify.tv.android": "spotify.jpg"
+    "com.spotify.tv.android": "spotify.jpg",
+    "com.xiaomi.voicecontrol": "xiaoai.jpg",
+    "com.xiaomi.mitv.calendar": "calendar.jpg",
+    "com.xiaomi.mitv.appstore": "app-center.jpg",
+    "com.xiaomi.mitv.smartshare": "wireless-cast.jpg",
+    "com.xiaomi.smarthome.tv": "mi-home.jpg"
   }
 }
