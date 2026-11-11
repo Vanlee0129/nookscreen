@@ -1,63 +1,80 @@
-# NookScreen
+<div align="center">
+  <img src="docs/brand/icon.png" width="96" height="96" alt="NookScreen icon">
+  <h1>NookScreen</h1>
+  <p><strong>A home screen of your own.</strong></p>
+  <p>NookScreen is an open-source Android TV launcher. Arrange your apps, HDMI inputs and wallpaper with the remote, and keep a layout for everyday viewing, movies and games.</p>
+  <p>
+    <a href="https://github.com/Vanlee0129/nookscreen/releases/latest/download/nookscreen-daily.apk"><strong>Download APK</strong></a> |
+    <a href="#install">Installation</a> |
+    <a href="https://github.com/Vanlee0129/nookscreen/releases/latest">Release notes</a> |
+    <a href="README.md">简体中文</a>
+  </p>
+  <img src="docs/screenshots/night.jpg" width="960" alt="NookScreen on a Xiaomi TV with a night wallpaper, HDMI 2, weather and two rows of app tiles">
+</div>
 
-**Arrange your TV home screen with the remote.** NookScreen is an open-source launcher for Android TV. Keep apps, HDMI inputs and wallpaper on one screen, with different layouts for everyday viewing, movies and games.
+## What you can do
 
-[Download the daily APK](https://github.com/Vanlee0129/nookscreen/releases/latest/download/nookscreen-daily.apk) · [Release history](https://github.com/Vanlee0129/nookscreen/releases) · [Report an issue](https://github.com/Vanlee0129/nookscreen/issues) · [中文](README.md)
+- **Keep your favorites close.** Browse with the directional keys. Hold **OK** to move or hide an app, or group apps in a folder. Pin supported HDMI and other inputs alongside apps.
+- **Give each activity its own layout.** Duplicate a scene under **Control Center → Desktop scenes**. Each scene saves its app order, folders, hidden apps, favorite inputs and appearance. The last scene returns after a restart.
+- **Customize from your phone.** Put your phone and TV on the same local network, then open the setup code under **Control Center → Themes → Wallpaper and Personalization**. Upload photos, change app artwork or arrange your home screen.
+- **Use the idle screen.** Set a clock, photo or aerial screensaver under personalization. You can also add [your own screensaver videos](docs/SCREENSAVER_VIDEOS.md).
 
-![NookScreen running on a Xiaomi TV, with HDMI 2, weather and two rows of app tiles](docs/screenshots/night.jpg)
-
-## Install and open Control Center
-
-1. Download `nookscreen-daily.apk`, transfer it to your TV and install it. The daily build supports Android 5.0 and later and uses package ID `app.nookscreen.tv`.
-2. Open NookScreen and select it as the default Home app in Android settings. If your TV has no default Home setting, open **Control Center → Make NookScreen Your Home Screen** and follow the prompts to enable Home Guard.
-3. On Home, press **Up** to focus the status button in the top right, then press **OK** to open Control Center. Hold **OK** on an app tile to open its menu.
-
-Default Home settings and available inputs vary by manufacturer. See the [device notes](docs/devices/) for tested models and settings.
-
-## Arrange your home screen
-
-| Task | Where to start |
+| Everyday layout | Scene settings |
 | --- | --- |
-| Organize apps | Hold **OK** on a tile to move it, hide it or put it in a folder. |
-| Give movies and games different layouts | Open **Control Center → Desktop scenes**, duplicate the current scene and edit the copy. |
-| Add HDMI to Home | Pick **Favorite inputs** in the scene editor. Supported inputs become tiles you can open with **OK**. |
-| Send photos or app artwork from your phone | Connect your phone to the same local network, then scan the setup code under **Control Center → Themes → Wallpaper and Personalization**. |
+| ![Dawn wallpaper, HDMI 1 and an app folder](docs/screenshots/morning.jpg) | ![Scene settings for wallpaper, favorite inputs and renaming](docs/screenshots/scenes.jpg) |
 
-Each scene saves its app order, folders, hidden apps, favorite inputs and appearance. NookScreen restores the active scene after a restart.
+## Install
 
-| Example scene | Scene settings |
+The daily build supports **Android 5.0 and later** and uses package ID `app.nookscreen.tv`. Installing it requires no root access. For Android 4.x, see the separate [Aerial Lite](docs/LITE.md).
+
+1. [Download `nookscreen-daily.apk`](https://github.com/Vanlee0129/nookscreen/releases/latest/download/nookscreen-daily.apk), copy it to a USB drive, then open it in the TV’s file manager. Allow installation from that source if your TV asks.
+2. Open NookScreen from the TV’s app list. On Home, press **Up** to focus the status button in the top right, then press **OK** to open Control Center.
+3. Select NookScreen as the default Home app in Android settings and press **Home** to check. If the setting is missing or Home still opens the manufacturer’s launcher, choose **Control Center → Make NookScreen Your Home Screen** and follow the prompts to enable Home Guard.
+
+### If you cannot install from USB
+
+Connect the TV and computer to the same network. Enable debugging using the [device-specific ADB notes](docs/devices/adb-by-brand.md) and run these commands from your computer. Replace the sample IP address and port with the ones shown on your TV. If your TV only offers wireless debugging, follow the pairing instructions first.
+
+```sh
+adb connect 192.168.1.20:5555
+adb install -r nookscreen-daily.apk
+```
+
+Open NookScreen from the app list. If you still cannot set it as the default, you can launch it from there or consult the [device notes](docs/devices/).
+
+### Compatibility and restoring the original launcher
+
+| Situation | Where to look |
 | --- | --- |
-| ![Dawn wallpaper with HDMI 1 and an app folder](docs/screenshots/morning.jpg) | ![Scene settings for wallpaper, favorite inputs and renaming](docs/screenshots/scenes.jpg) |
+| Home or Home Guard behaves differently on Xiaomi or Redmi | Match the device and firmware to the [Xiaomi Android 6](docs/devices/xiaomi-android6.md), [MFTP0](docs/devices/xiaomi-mitv-mftp0.md) or [MFTR0](docs/devices/xiaomi-mitv-mftr0.md) notes. |
+| Default Home or HDMI is missing on TCL or FFALCON | See [TCL MT5879](docs/devices/tcl-mt5879-cn.md), [MT9655](docs/devices/tcl-mt9655-cn.md) or the [other device notes](docs/devices/). Capabilities vary between firmware versions. |
+| Restore the original launcher | Change the default Home app in Android settings. If you enabled Home Guard, turn it off in Accessibility settings, then press Home to check. |
 
-## Plugins
+## Themes and plugins
 
-Core provides the launcher, remote navigation, scenes and updates. Themes are a type of plugin. New features and content outside the core launcher ship as plugins, with their own versions and installation, update, disable and removal controls. Newly published themes appear in the catalog automatically. Control Center has separate **Themes** and **Plugins** entries. The Plugins page manages feature plugins.
+Core provides the launcher, remote navigation, scenes and updates. Plugins deliver features and content outside the core launcher. **Themes are a type of plugin** with their own installation, update, disable and removal controls. Control Center gives **Themes** its own entry and uses **Plugins** for feature plugins.
 
-### Install and switch themes
-
-On the TV, open **Control Center → Themes**. Select a theme to download it, then select it again and choose **Apply**. The same menu offers updates, disabling and removal. The phone setup page has theme controls under **Wallpaper & Screensaver → Themes**.
-
-On v0.0.3, the TV path is **Control Center → Themes → Plugins**. When upgrading from v0.0.2, install the matching theme plugin to restore the theme references saved in your scenes.
+On the TV, open **Control Center → Themes** and select a theme to download it. When the download finishes, select it again and choose **Apply**. On the phone setup page, use **Wallpaper & Screensaver → Themes**.
 
 | Sanrio · Strawberry Picnic | Marvel · Comic Universe |
 | --- | --- |
-| ![Strawberry picnic wallpaper and pastel app tiles](docs/screenshots/sanrio-theme.jpg) | ![Comic city wallpaper and red-and-gold app tiles](docs/screenshots/marvel-theme.jpg) |
+| ![Strawberry picnic wallpaper with pastel tiles](docs/screenshots/sanrio-theme.jpg) | ![Comic city wallpaper with red-and-gold tiles](docs/screenshots/marvel-theme.jpg) |
 
-Each pack has 25 dedicated tiles. Other apps keep their artwork with a matching frame, and uploaded or explicitly selected icons take priority. Disabling or removing a theme restores classic tiles and uses the built-in Aurora wallpaper where a theme wallpaper is missing. Photos, icons and scenes are retained. [Theme coverage and artwork notes](docs/themes.md)
+Each pack has 25 dedicated tiles, including XiaoAI, Calendar, App Center, Wireless Cast and Mi Home. Other apps keep their artwork with a matching frame. Artwork you upload or explicitly select takes priority. [Theme coverage and artwork notes](docs/themes.md)
 
-### Save your own look
+To reuse a look, choose **Save current appearance** on the Themes page. Use the phone setup page to change app artwork while the custom theme is active. You can use that theme in multiple scenes.
 
-Choose a base theme and wallpaper, then select **Save current appearance** on the Themes page. With your custom theme active, scan the setup code to upload per-app artwork from your phone. You can reuse the same custom theme across scenes.
+## Updates and troubleshooting
 
-## Updates and support
+| Task | What to do |
+| --- | --- |
+| Update NookScreen | Go to **Control Center → NookScreen → Check for updates**. An in-place update with the same package ID and signing certificate keeps scenes, photos and custom artwork. On Android 12 and later, NookScreen can update while idle once authorized. |
+| Update a theme | Check for updates from the theme’s menu. If the download fails, make sure the TV can reach GitHub Releases and try again. |
+| Restore a theme after upgrading | When upgrading from v0.0.2, reinstall the matching theme to restore the references saved in your scenes. On v0.0.3, theme downloads are under **Control Center → Themes → Plugins**. |
 
-- **Update the launcher**　Open **Control Center → NookScreen** and select **Check for updates**. Android 12 and later support idle-time updates once you allow NookScreen to install apps. An in-place update with the same package and signing certificate keeps your data.
-- **Update a theme**　Check for updates in the theme’s menu. If a theme download fails, check whether the TV can reach GitHub Releases and try again.
-- **Report a problem**　Include your TV model, Android and NookScreen versions, and the steps to reproduce it. For plugin issues, include the plugin name and version. [Open an issue](https://github.com/Vanlee0129/nookscreen/issues)
+## Development and contributions
 
-## Local development
-
-Use **JDK 17** and **Android SDK 36**. Run these commands from the repository root.
+Use **JDK 17** and **Android SDK 36**. From the repository root:
 
 ```sh
 ./gradlew :core:testDailyDebugUnitTest :core:assemblePreviewRelease
@@ -65,14 +82,15 @@ Use **JDK 17** and **Android SDK 36**. Run these commands from the repository ro
 ./gradlew :plugins:themes:assemble
 ```
 
-Preview uses package ID `app.nookscreen.tv.preview` for side-by-side testing on a TV. Find the daily APK under `core/build/outputs/apk/daily/release/` and the theme release assets under `plugins/themes/build/distributions/`. [Signing and release steps](docs/RELEASE.md)
-
 | Directory | Contents |
 | --- | --- |
-| [`core/`](core/) | Launcher, scenes, plugin management and phone setup |
-| [`plugin-api/`](plugin-api/) | Plugin compatibility version and Android entry point |
-| [`plugins/themes/`](plugins/themes/) | Theme manifests, artwork and packaging tasks |
-| [`plugins/clock/`](plugins/clock/) | Example of a standalone Android feature plugin |
-| [`lite/`](lite/) | Aerial Lite for Android 4.x |
+| [`core/`](core/) | Launcher, scenes, Control Center and phone setup |
+| [`plugin-api/`](plugin-api/) | Compatibility version and Android extension entry point |
+| [`plugins/`](plugins/) | Theme assets, packaging tasks and a clock feature plugin example |
+| [`website/`](website/) | Chinese and English website source for GitHub Pages |
 
-See the [architecture notes](docs/ARCHITECTURE.md) and [plugin guide](docs/PLUGINS.md) before contributing. NookScreen is based on [Aerial](https://github.com/pengchujin/aerial-tv) and released under the [MIT license](LICENSE).
+Preview uses package ID `app.nookscreen.tv.preview` for side-by-side testing. The daily APK is under `core/build/outputs/apk/daily/release/` and theme packages are under `plugins/themes/build/distributions/`. See the [architecture notes](docs/ARCHITECTURE.md), [plugin guide](docs/PLUGINS.md) and [signing and release guide](docs/RELEASE.md).
+
+[Report a problem or share device notes](https://github.com/Vanlee0129/nookscreen/issues/new/choose). Include your TV model, Android and NookScreen versions, and steps to reproduce. For a theme or plugin issue, include its name and version.
+
+NookScreen is based on [Aerial](https://github.com/pengchujin/aerial-tv) and released under the [MIT license](LICENSE).
