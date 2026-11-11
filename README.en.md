@@ -26,7 +26,7 @@
 
 ## Install
 
-The daily build supports **Android 5.0 and later** and uses package ID `app.nookscreen.tv`. Installing it requires no root access. For Android 4.x, see the separate [Aerial Lite](docs/LITE.md).
+NookScreen supports **Android 5.0 and later**. The stable release uses package ID `app.nookscreen.tv` and requires no root access. For Android 4.x, see the separate [Aerial Lite](docs/LITE.md).
 
 1. [Download `nookscreen-daily.apk`](https://github.com/Vanlee0129/nookscreen/releases/latest/download/nookscreen-daily.apk), copy it to a USB drive, then open it in the TV’s file manager. Allow installation from that source if your TV asks.
 2. Open NookScreen from the TV’s app list. On Home, press **Up** to focus the status button in the top right, then press **OK** to open Control Center.
@@ -90,7 +90,7 @@ Use **JDK 17** and **Android SDK 36**. From the repository root:
 | [`plugins/`](plugins/) | Theme assets, packaging tasks and a clock feature plugin example |
 | [`website/`](website/) | Chinese and English website source for GitHub Pages |
 
-Preview uses package ID `app.nookscreen.tv.preview` for side-by-side testing. The daily APK is under `core/build/outputs/apk/daily/release/` and theme packages are under `plugins/themes/build/distributions/`. See the [architecture notes](docs/ARCHITECTURE.md), [plugin guide](docs/PLUGINS.md) and [signing and release guide](docs/RELEASE.md).
+Preview uses package ID `app.nookscreen.tv.preview` for side-by-side testing. The stable APK is under `core/build/outputs/apk/daily/release/` and theme packages are under `plugins/themes/build/distributions/`. See the [architecture notes](docs/ARCHITECTURE.md), [plugin guide](docs/PLUGINS.md) and [signing and release guide](docs/RELEASE.md).
 
 To preview the website, run `bash tools/build-website.sh <output-directory>` and serve that directory over HTTP. GitHub Pages publishes the generated files from the root of the `gh-pages` branch.
 
