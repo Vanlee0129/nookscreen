@@ -2,6 +2,7 @@
   <img src="docs/brand/icon.png" width="96" height="96" alt="栖屏图标">
   <h1>栖屏 NookScreen</h1>
   <p><strong>给你的电视，换个首页。</strong></p>
+  <p><strong>本项目的初衷主要是希望可以更多的自定义，可以把桌面做得很好看，做给一个喜欢库洛米的女孩子，做给一个喜欢库洛米也喜欢我的女孩子！</strong></p>
   <p>栖屏是一款开源的 Android TV 桌面。用遥控器整理应用、切换 HDMI 信号源、换壁纸，也能为日常看电视、观影和游戏分别保存布局。</p>
   <p>
     <a href="https://vanlee0129.github.io/nookscreen/">官网</a> |
