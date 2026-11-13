@@ -149,3 +149,7 @@ Preview 的包名是 `app.nookscreen.tv.preview`，可以和正式版装在同�
 预览官网可运行 `bash tools/build-website.sh <输出目录>`，再用本地 HTTP 服务打开该目录。GitHub Pages 从 `gh-pages` 分支根目录发布构建结果。
 
 栖屏基于 [Aerial](https://github.com/pengchujin/aerial-tv)，使用 [MIT 许可证](LICENSE)。
+
+## 友情链接
+
+[LINUX DO — 新的理想型社区](https://linux.do/)
