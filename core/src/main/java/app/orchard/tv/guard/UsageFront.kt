@@ -15,16 +15,28 @@ internal object UsageFront {
 
     class Picker {
         private var front: Front? = null
+        private var pausedAt: Long? = null
 
         fun add(type: Int, pkg: String, cls: String?, at: Long) {
             if (cls == null) return
             val f = front
             when (type) {
-                MOVE_TO_FOREGROUND -> front = Front(pkg, cls, at, closed = false)
-                MOVE_TO_BACKGROUND -> if (f != null && f.pkg == pkg && f.cls == cls && at >= f.at) front = f.copy(closed = true)
+                MOVE_TO_FOREGROUND -> {
+                    front = Front(pkg, cls, at, closed = false)
+                    pausedAt = null
+                }
+                MOVE_TO_BACKGROUND -> if (f != null && f.pkg == pkg && f.cls == cls && at >= f.at) {
+                    front = f.copy(closed = true)
+                    pausedAt = at
+                }
             }
         }
 
-        fun result(): Front? = front
+        fun result(now: Long, activitySettleMs: Long): Front? {
+            val f = front ?: return null
+            val paused = pausedAt ?: return f
+            // A pause also precedes the next activity in the same app (Aerial #1541).
+            return if (now - paused in 0 until activitySettleMs) f.copy(closed = false) else f
+        }
     }
 }

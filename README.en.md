@@ -22,6 +22,7 @@
 | Arrange your apps | Hold **OK** on a tile to move or hide an app, or put it in a folder. Restore hidden apps in personalization settings. |
 | Switch between layouts | Duplicate a scene under **Control Center → Desktop scenes**. Keep streaming apps together in one scene and HDMI and games in another. |
 | Put HDMI on Home | Choose supported inputs under **Favorite inputs** for the current scene. Highlight a tile and press **OK** to switch inputs. |
+| Check HDMI connections | Open **Control Center → Inputs**. NookScreen checks connections each time Control Center opens. After plugging or unplugging a device, close and reopen it to see the latest status. |
 | Change the wallpaper, clock or layout | Under **Control Center → Themes → Wallpaper and personalization**, choose a wallpaper, one or two rows, tiles per row, and the clock’s size and position. |
 | Set up Home from your phone | Connect the TV and phone to the same local network and scan the code under **Wallpaper and personalization**. Upload photos and videos, change app artwork, drag to reorder tiles or choose a weather city. |
 | Set a screensaver | Under **Wallpaper and personalization → Screensaver**, choose a clock, photos, aerial footage or [your own video](docs/SCREENSAVER_VIDEOS.md), then set the idle time. |
@@ -105,13 +106,14 @@ To reuse a look, choose **Save current appearance** on the Themes page. Use the 
 
 | Task | What to do |
 | --- | --- |
-| Update NookScreen | Go to **Control Center → NookScreen → Check for updates**. An in-place update with the same package ID and signing certificate keeps scenes, photos and custom artwork. On Android 12 and later, NookScreen can update while idle once authorized. |
+| Update NookScreen | Go to **Control Center → NookScreen → Check for updates**. If the download is interrupted, NookScreen tries to resume from where it stopped. An in-place update with the same package ID and signing certificate keeps scenes, photos and custom artwork. On Android 12 and later, NookScreen can update while idle once authorized. |
 | Update a theme | Check for updates from the theme’s menu. If the download fails, make sure the TV can reach GitHub Releases and try again. |
 | Restore a theme after upgrading | When upgrading from v0.0.2, reinstall the matching theme to restore the references saved in your scenes. On v0.0.3, theme downloads are under **Control Center → Themes → Plugins**. |
 
 ### Common questions
 
 - **Why does Home still open the original launcher after installation?** Open NookScreen from the TV’s app list. To change what Home opens, set the default Home app in Android settings or follow **Control Center → Make NookScreen Your Home Screen** to enable Home Guard. The available options depend on your TV firmware.
+- **Why does Home Guard send me back to Home when I switch screens in an app?** Starting in v0.0.8, Home Guard gives screen changes time to settle so it can keep the app in front while you navigate.
 - **Why doesn’t the setup page open after scanning the code?** Check that the phone and TV are on the same local network and the TV is on. You can also enter the address shown on the TV in a computer browser on that network.
 - **Why do some apps keep their original artwork after I switch themes?** A theme supplies artwork for the apps listed in its coverage. Other apps get the theme’s frame around their usual icon. Artwork you choose manually takes priority. [Theme coverage](docs/themes.md)
 

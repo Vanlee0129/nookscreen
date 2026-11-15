@@ -162,6 +162,15 @@ fun ControlCenter(
     // still waking, and the activity's polling (MainActivity) never ran: Xiaomi MiTV-AZFP0,
     // Android 9, whose log showed onCreate but no onStart for that instance (issue #892).
     LaunchedEffect(visible) { if (visible) vm.refreshPanel() }
+    LaunchedEffect(visible) {
+        if (!visible) return@LaunchedEffect
+        vm.refreshSources(again = true)
+        // Some firmware publishes its inputs late. Retry only while the list is empty.
+        while (vm.sources.isEmpty()) {
+            delay(3000)
+            vm.refreshSources()
+        }
+    }
 
     AnimatedVisibility(
         visible = visible,
@@ -300,14 +309,6 @@ private fun MainPage(
     // equally near choices and takes the middle one, Network, whichever button Down came from
     // (75A7D). Remember that button and send Up back to it.
     var cameFrom by remember { mutableStateOf(first) }
-    // Firmwares that list their inputs late (see HomeViewModel.refreshSources): look again while
-    // the page is open and still empty. One provider or TvInputManager query every 3 s.
-    LaunchedEffect(Unit) {
-        while (vm.sources.isEmpty()) {
-            vm.refreshSources()
-            delay(3000)
-        }
-    }
     LaunchedEffect(Unit) {
         if (!takeFocus) return@LaunchedEffect
         withFrameNanos { }

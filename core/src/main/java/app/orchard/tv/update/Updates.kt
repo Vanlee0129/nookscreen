@@ -51,12 +51,6 @@ object Updates {
     private const val LATEST_RELEASE = "https://api.github.com/repos/$REPOSITORY/releases/latest"
     private val assetName = "nookscreen-${BuildConfig.FLAVOR}.apk"
 
-    /**
-     * A source that delivers less than [STALL_BYTES] in [STALL_MS] is given up for the next one
-     * (issue #390). A slow but moving download (about 8 KB/s and up) still finishes.
-     */
-    private const val STALL_MS = 30_000L
-    private const val STALL_BYTES = 256 * 1024L
     const val CONTROL_CENTER_MAX_AGE_MS = UpdateCheck.PANEL_MAX_AGE_MS
 
     /** This build's version, e.g. "1.17" (the guard build's "-guard" left off). */
@@ -648,54 +642,23 @@ object Updates {
     }
 
     private suspend fun download(url: String, file: File) {
-        val directory = checkNotNull(file.parentFile)
-        check(directory.isDirectory || directory.mkdirs()) { "Cannot create update directory: $directory" }
-        check(directory.canWrite()) { "Cannot write update directory: $directory" }
-        val part = File(directory, file.name + ".part")
-        val c = URL(url).openConnection() as HttpURLConnection
-        LegacyUpdateTls.configure(appContext, c)
-        c.connectTimeout = 10_000
-        c.readTimeout = 20_000
-        // A throttled route can keep the TLS handshake up and deliver a byte now and then, so no
-        // read() ever blocks long enough to time out and the progress bar sits at 0% for good
-        // (issue #390, FFALCON/TCL on China Unicom). So the bytes are counted, not each read timed.
-        var windowAt = SystemClock.elapsedRealtime()
-        var windowFrom = 0L
-        try {
-            if (c.responseCode != HttpURLConnection.HTTP_OK) error("HTTP ${c.responseCode}")
-            val total = c.contentLength.toLong()
-            var done = 0L
-            var shown = -1
-            c.inputStream.use { input ->
-                part.outputStream().use { out ->
-                    val buf = ByteArray(64 * 1024)
-                    while (true) {
-                        val n = input.read(buf)
-                        if (n < 0) break
-                        out.write(buf, 0, n)
-                        done += n
-                        val now = SystemClock.elapsedRealtime()
-                        if (now - windowAt >= STALL_MS) {
-                            if (done - windowFrom < STALL_BYTES) error("stalled: ${done - windowFrom} bytes in ${(now - windowAt) / 1000} s")
-                            windowAt = now
-                            windowFrom = done
-                        }
-                        val percent = if (total > 0) (done * 100 / total).toInt() else 0
-                        if (percent != shown) {
-                            shown = percent
-                            withContext(Dispatchers.Main) { install = Install.Downloading(percent / 100f) }
-                        }
-                    }
+        UpdateDownload.download(
+            file = file,
+            connect = {
+                (URL(url).openConnection() as HttpURLConnection).also {
+                    LegacyUpdateTls.configure(appContext, it)
+                    it.connectTimeout = 10_000
+                    it.readTimeout = 20_000
                 }
-            }
-            if (total > 0 && done != total) error("got $done of $total bytes")
-            if (!part.renameTo(file)) error("could not keep the download")
-            // The installer on Android 5 and 6 opens the file itself.
-            if (Build.VERSION.SDK_INT < 24) file.setReadable(true, false)
-        } finally {
-            c.disconnect()
-            part.delete()
-        }
+            },
+            elapsedMs = SystemClock::elapsedRealtime,
+            progress = { percent ->
+                withContext(Dispatchers.Main) { install = Install.Downloading(percent / 100f) }
+            },
+            retrying = { offset, e -> Log.w(TAG, "Update interrupted at $offset bytes; resuming", e) },
+        )
+        // The installer on Android 5 and 6 opens the file itself.
+        if (Build.VERSION.SDK_INT < 24) file.setReadable(true, false)
     }
 
     /** The APK's package info when it parses as this package, else null. */

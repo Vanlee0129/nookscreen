@@ -304,6 +304,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             val started = SystemClock.uptimeMillis()
             // The inputs are probed while the apps load: one after the other, a cold start waited
             // for both in turn (0.1-0.8 s more on the TVs in issues #452, #454, #537).
+            val sourceQuery = ++sourceGeneration
             val probing = async(Dispatchers.Default) { SystemProbe.sources(ctx) }
             // A cold start reads only the first rows' tiles whole; the rest follow just after.
             val first: ((Set<String>) -> Set<String>)? = if (loaded) null else { installed -> store.leading(LEADING_TILES, installed) }
@@ -314,7 +315,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             val now = SystemClock.uptimeMillis()
             DiagLog.i("${all.size} apps in ${now - started} ms (wait ${from - started}, queries ${queried - from}, " +
                 "tiles ${done - queried}, main ${now - done})")
-            sources = probing.await()
+            val probedSources = probing.await()
+            if (sourceQuery == sourceGeneration) sources = probedSources
             packagesSeen = sequence
             catalogConfig = config
             arrange()
@@ -693,12 +695,14 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private var systemRefresh: Job? = null
+    private var sourceGeneration = 0L
 
     fun refreshSystem() {
         // A foreground transition and a broadcast often arrive together. Cancel the stale
         // result; the replacement reads the newest state without racing an older assignment.
         systemRefresh?.cancel()
         val refreshInputs = loaded && loadJob?.isActive != true
+        val sourceQuery = if (refreshInputs) ++sourceGeneration else null
         systemRefresh = viewModelScope.launch {
             val ctx = context
             // Brightness off the main thread too: on MiTV without picture_backlight its first read
@@ -711,11 +715,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             homeStatus = withContext(Dispatchers.Default) { SystemProbe.homeStatus(ctx) }
             val level = withContext(Dispatchers.Default) { Brightness.level(ctx) }
             network = n; volume = v
-            // TvSource holds an Intent, which has no value equality; compare what a tile shows.
-            fun shown(list: List<TvSource>) = list.map { listOf(it.id, it.label, it.deviceName, it.intent.toUri(0)) }
-            if (s != null) {
-                if (shown(s) != shown(sources)) { sources = s; arrange() } else sources = s
-            }
+            if (s != null && sourceQuery == sourceGeneration) applySources(s)
             brightness = level
         }
     }
@@ -732,11 +732,25 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
      * Android 9) fills its source list some 30 s after boot, after Aerial has loaded and while it
      * stays in front, so nothing re-probed it (PR #507, by Sakurasan, checked on that TV).
      */
-    fun refreshSources() {
+    fun refreshSources(again: Boolean = false) {
+        if (!again && sources.isNotEmpty()) return
+        val query = ++sourceGeneration
         viewModelScope.launch {
-            val ctx = context
-            val s = withContext(Dispatchers.Default) { SystemProbe.sources(ctx) }
-            if (s.isNotEmpty() && sources.isEmpty()) { sources = s; arrange() }
+            val snapshot = withContext(Dispatchers.Default) { SystemProbe.sources(context) }
+            if (query == sourceGeneration && snapshot.isNotEmpty()) applySources(snapshot)
+        }
+    }
+
+    private fun applySources(snapshot: List<TvSource>) {
+        // Intent equality is by identity, so compare its routing and extras separately.
+        val same = sources.size == snapshot.size && sources.indices.all { index ->
+            val before = sources[index]
+            val after = snapshot[index]
+            before == after.copy(intent = before.intent) && before.intent.toUri(0) == after.intent.toUri(0)
+        }
+        if (!same) {
+            sources = snapshot
+            arrange()
         }
     }
 
