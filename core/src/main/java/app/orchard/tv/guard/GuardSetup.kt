@@ -20,6 +20,7 @@ import android.util.Log
 import app.orchard.tv.BuildConfig
 import app.orchard.tv.MainActivity
 import app.orchard.tv.dream.AerialDream
+import app.orchard.tv.settings.AerialSettings
 import app.orchard.tv.system.DiagLog
 import app.orchard.tv.system.SystemScreensaver
 
@@ -557,7 +558,7 @@ object GuardSetup {
     }
 
     private fun keepScreensaver(context: Context) {
-        if (!isUserUnlocked(context)) return
+        if (BuildConfig.PREVIEW || !isUserUnlocked(context)) return
         val resolver = context.contentResolver
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val key = "screensaver_components"
@@ -582,6 +583,7 @@ object GuardSetup {
      * chosen again, and only if Aerial was the one that switched it off.
      */
     fun setSystemScreensaverOff(context: Context, off: Boolean) {
+        if (BuildConfig.PREVIEW) return
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_SECURE_SETTINGS) != PackageManager.PERMISSION_GRANTED) return
         val resolver = context.contentResolver
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -590,11 +592,11 @@ object GuardSetup {
                 val mine = ComponentName(context, AerialDream::class.java).flattenToString()
                 if (Settings.Secure.getString(resolver, "screensaver_components") != mine) return
                 if (Settings.Secure.getInt(resolver, KEY_SCREENSAVER_ENABLED, 1) == 0) return
-                Settings.Secure.putInt(resolver, KEY_SCREENSAVER_ENABLED, 0)
+                check(Settings.Secure.putInt(resolver, KEY_SCREENSAVER_ENABLED, 0))
                 prefs.edit().putBoolean(KEY_SCREENSAVER_SWITCHED_OFF, true).apply()
                 Log.i(TAG, "screensaver set to never; switched the system's off")
             } else if (prefs.getBoolean(KEY_SCREENSAVER_SWITCHED_OFF, false)) {
-                Settings.Secure.putInt(resolver, KEY_SCREENSAVER_ENABLED, 1)
+                check(Settings.Secure.putInt(resolver, KEY_SCREENSAVER_ENABLED, 1))
                 prefs.edit().remove(KEY_SCREENSAVER_SWITCHED_OFF).apply()
                 Log.i(TAG, "screensaver delay chosen; switched the system's back on")
             }
@@ -609,18 +611,26 @@ object GuardSetup {
      * the firmware came with, where Aerial had taken it (TCL); any other choice takes it again.
      */
     fun screensaverModeChanged(context: Context) {
-        if (!isUserUnlocked(context)) return
+        if (BuildConfig.PREVIEW || !isUserUnlocked(context)) return
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_SECURE_SETTINGS) != PackageManager.PERMISSION_GRANTED) return
+        if (!systemChosen(context)) {
+            keepScreensaver(context)
+            if (AerialSettings.screensaverMinutes == AerialSettings.NEVER) setSystemScreensaverOff(context, true)
+            return
+        }
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        if (!prefs.getBoolean(KEY_OWN_SCREENSAVER, false)) return
-        if (!systemChosen(context)) { keepScreensaver(context); return }
         val resolver = context.contentResolver
-        val mine = ComponentName(context, AerialDream::class.java).flattenToString()
-        val firmware = SystemScreensaver.firmwareDream(context) ?: return
-        if (Settings.Secure.getString(resolver, "screensaver_components").orEmpty() != mine) return
+        val mine = ComponentName(context, AerialDream::class.java)
         runCatching {
-            Settings.Secure.putString(resolver, "screensaver_components", firmware)
-            Log.i(TAG, "screensaver set to the system's; the dream is $firmware again")
+            val current = Settings.Secure.getString(resolver, "screensaver_components")
+            val firmware = SystemScreensaver.firmwareDream(context)
+            if (firmware != null && current?.let(ComponentName::unflattenFromString) == mine) {
+                check(Settings.Secure.putString(resolver, "screensaver_components", firmware))
+                prefs.edit().putBoolean(KEY_OWN_SCREENSAVER, true).apply()
+                Log.i(TAG, "screensaver set to the system's; the dream is $firmware again")
+            }
         }.onFailure { Log.w(TAG, "could not give the system screensaver back", it) }
+        setSystemScreensaverOff(context, false)
     }
 
     /**
@@ -692,7 +702,7 @@ object GuardSetup {
         ensureAdb(context)
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_SECURE_SETTINGS) != PackageManager.PERMISSION_GRANTED) return false
         restoreReceivers(context)
-        keepScreensaver(context)
+        screensaverModeChanged(context)
         RevivalSync.ensure(context)
         ensureListenerBeforeNougat(context)
         if (standingOut(context)) { watchScreenOn(context); return false }

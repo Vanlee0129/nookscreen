@@ -335,11 +335,18 @@ fun WallpaperSheet(
                         )
                     }
                     // The clock screensaver is its clock, and the others show none.
-                    if (Wallpapers.screensaver == ScreensaverMode.Aerial || Wallpapers.screensaver == ScreensaverMode.Photos) Choices(
-                        R.string.ss_show_time, stringResource(R.string.ss_show_time_hint), note,
-                        listOf(true to R.string.st_on, false to R.string.st_off),
-                        AerialSettings.screensaverClock, AerialSettings::chooseScreensaverClock,
-                    )
+                    if (Wallpapers.screensaver == ScreensaverMode.Aerial || Wallpapers.screensaver == ScreensaverMode.Photos) {
+                        Choices(
+                            R.string.ss_show_time, stringResource(R.string.ss_show_time_hint), note,
+                            listOf(true to R.string.st_on, false to R.string.st_off),
+                            AerialSettings.screensaverClock, AerialSettings::chooseScreensaverClock,
+                        )
+                        Choices(
+                            R.string.ss_show_caption, stringResource(R.string.ss_show_caption_hint), note,
+                            listOf(true to R.string.st_on, false to R.string.st_off),
+                            AerialSettings.screensaverCaption, AerialSettings::chooseScreensaverCaption,
+                        )
+                    }
                     // The firmware's screensaver starts on the firmware's timer: Aerial's delay
                     // did nothing there, and Xiaomi's 1 minute came before the 5 chosen (issue #675).
                     if (Wallpapers.screensaver == ScreensaverMode.System) SettingRow(R.string.ss_delay, null, note) {

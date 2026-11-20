@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import app.orchard.tv.MainActivity
+import app.orchard.tv.settings.AerialSettings
 import app.orchard.tv.system.DiagLog
 import app.orchard.tv.system.MissingClipboard
 import app.orchard.tv.ui.theme.canvasDensity
@@ -64,6 +65,7 @@ class AerialDream : DreamService(), LifecycleOwner, SavedStateRegistryOwner {
         LiveFilm.onHome?.letDecoderGo()
         Wallpapers.init(this)
         Wallpapers.fitScreen(this)
+        AerialSettings.init(this)
         Weather.init(this)
         val canvas = canvasDensity(resources.displayMetrics)
         setContentView(
@@ -123,12 +125,14 @@ class AerialDream : DreamService(), LifecycleOwner, SavedStateRegistryOwner {
     override fun onDreamingStarted() {
         super.onDreamingStarted()
         running = this
+        Weather.setVisible(this, true)
         registry.currentState = Lifecycle.State.RESUMED
         runCatching { registerReceiver(screenOff, IntentFilter(Intent.ACTION_SCREEN_OFF)) }
     }
 
     override fun onDreamingStopped() {
         if (running === this) running = null
+        Weather.setVisible(this, false)
         runCatching { unregisterReceiver(screenOff) }
         // Since Android 11 the dream lives in an activity: a key press finishes it, the window is
         // detached first (DESTROYED), and only then is the dream stopped. Moving back to CREATED
@@ -139,6 +143,7 @@ class AerialDream : DreamService(), LifecycleOwner, SavedStateRegistryOwner {
 
     override fun onDetachedFromWindow() {
         if (running === this) running = null
+        Weather.setVisible(this, false)
         registry.currentState = Lifecycle.State.DESTROYED
         super.onDetachedFromWindow()
     }

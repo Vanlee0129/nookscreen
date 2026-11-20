@@ -2,6 +2,7 @@ package app.orchard.tv.weather
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.SystemClock
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -32,14 +34,14 @@ data class WeatherNow(val celsius: Int, val kind: WeatherKind, val day: Boolean,
  * The guess is often wrong behind a proxy (a whole home behind one shows another country), which
  * is why the phone page shows it and lets the owner correct it.
  *
- * Fetched when Home comes to the front, at most once an hour; nothing runs while the TV is idle.
+ * Refreshed while Home or the system dream is visible.
  * Compose state, written on the main thread only.
  */
 object Weather {
     private const val TAG = "AerialWeather"
     private const val PREFS = "weather"
     private const val REFRESH_MS = 60 * 60 * 1000L
-    private const val RETRY_MS = 10 * 60 * 1000L
+    private const val RETRY_MS = 3 * 60 * 1000L
     private const val RELOCATE_MS = 24 * 60 * 60 * 1000L
     /** A reading older than this is not shown at all. */
     private const val STALE_MS = 3 * 60 * 60 * 1000L
@@ -58,8 +60,10 @@ object Weather {
     private lateinit var app: Context
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var started = false
-    private var lastAttempt = 0L
+    private var lastAttempt: Long? = null
     private var job: Job? = null
+    private var nextRefresh: Job? = null
+    private val visibleOwners = mutableSetOf<Any>()
 
     fun init(context: Context) {
         if (started) return
@@ -78,24 +82,48 @@ object Weather {
         }
     }
 
-    private var failed = false
+    private var failures = 0
 
     /** Like the daily photos: a failed reading is retried when the network connects (issue #129). */
     fun refreshIfStale(networkCameUp: Boolean = false) {
-        if (!started) return
-        val since = System.currentTimeMillis() - lastAttempt
-        if (since >= REFRESH_MS || (failed && (networkCameUp || since >= RETRY_MS))) refresh()
+        if (!started || job?.isActive == true) return
+        if (dueInMs() == 0L || networkCameUp && failures > 0) refresh()
+    }
+
+    /** Home and the dream can overlap during a transition. */
+    fun setVisible(owner: Any, visible: Boolean) {
+        if (visible) visibleOwners.add(owner) else visibleOwners.remove(owner)
+        scheduleRefresh()
+    }
+
+    private fun dueInMs(): Long {
+        val attemptedAt = lastAttempt ?: return 0L
+        return (refreshInterval(failures) - (SystemClock.elapsedRealtime() - attemptedAt)).coerceAtLeast(0L)
+    }
+
+    internal fun refreshInterval(failures: Int): Long =
+        if (failures == 0) REFRESH_MS
+        else (RETRY_MS shl (failures - 1).coerceAtMost(5)).coerceAtMost(REFRESH_MS)
+
+    private fun scheduleRefresh() {
+        nextRefresh?.cancel()
+        if (!started || visibleOwners.isEmpty() || job?.isActive == true) return
+        nextRefresh = scope.launch {
+            delay(dueInMs())
+            refreshIfStale()
+        }
     }
 
     private fun refresh() {
-        lastAttempt = System.currentTimeMillis()
+        lastAttempt = SystemClock.elapsedRealtime()
+        nextRefresh?.cancel()
         job?.cancel()
         job = scope.launch {
             val reading = withContext(Dispatchers.IO) {
                 runCatching { fetch() }.onFailure { Log.w(TAG, "weather unavailable", it) }.getOrNull()
             }
             prefs.getString("place", null)?.let { place = it }
-            failed = reading == null
+            failures = if (reading == null) (failures + 1).coerceAtMost(6) else 0
             if (reading != null) {
                 now = reading
                 prefs.edit {
@@ -107,6 +135,8 @@ object Weather {
                     putInt("low", reading.low ?: NONE)
                 }
             }
+            job = null
+            scheduleRefresh()
         }
     }
 

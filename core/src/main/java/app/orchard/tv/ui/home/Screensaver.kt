@@ -324,8 +324,10 @@ private fun Labels(
 ) {
     // Fades in where Home's own clock has moved to, as the photos cover it.
     val time by animateFloatAsState(if (showTime) 1f else 0f, tween(2000), label = "time")
+    val showCaption = AerialSettings.screensaverCaption
+    val showClock = AerialSettings.screensaverClock
     Box(Modifier.fillMaxSize()) {
-        if (shade) Canvas(Modifier.fillMaxSize().diagLayer("shade")) {
+        if (shade && (showClock || showCaption)) Canvas(Modifier.fillMaxSize().diagLayer("shade")) {
             val shade = labelShadeImage
             // Just enough shade under the text to read it over bright sky or snow. Only its two
             // bands: the clear middle would cost the GPU as much to fill (Lite's SaverView.Shade).
@@ -334,14 +336,17 @@ private fun Labels(
             val top = (h * SHADE_TOP).roundToInt()
             val bottom = (h * SHADE_BOTTOM).roundToInt()
             val sh = shade.height
-            drawImage(shade, srcSize = IntSize(shade.width, (sh * SHADE_TOP).roundToInt()), dstSize = IntSize(w, top), filterQuality = FilterQuality.Low)
-            drawImage(
+            if (showClock) drawImage(
+                shade, srcSize = IntSize(shade.width, (sh * SHADE_TOP).roundToInt()),
+                dstSize = IntSize(w, top), filterQuality = FilterQuality.Low,
+            )
+            if (showCaption) drawImage(
                 shade, srcOffset = IntOffset(0, (sh * SHADE_BOTTOM).roundToInt()), srcSize = IntSize(shade.width, sh - (sh * SHADE_BOTTOM).roundToInt()),
                 dstOffset = IntOffset(0, bottom), dstSize = IntSize(w, h - bottom), filterQuality = FilterQuality.Low,
             )
         }
         val drift = saverDrift(now)
-        if (time > 0f && AerialSettings.screensaverClock) BasicText(
+        if (time > 0f && showClock) BasicText(
             timeText(now),
             style = SaverClockStyle,
             modifier = Modifier
@@ -353,7 +358,7 @@ private fun Labels(
                     translationY = drift.y.toPx()
                 },
         )
-        AnimatedContent(
+        if (showCaption) AnimatedContent(
             targetState = caption.orEmpty(),
             // One after the other: two names fading across each other in the same place smeared.
             transitionSpec = { fadeIn(tween(600, delayMillis = 400, easing = Motion.EaseOut)) togetherWith fadeOut(tween(400, easing = Motion.EaseOut)) },
