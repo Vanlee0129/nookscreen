@@ -30,23 +30,19 @@ class SystemScreensaverRestoreTest {
         Settings.Secure.putString(resolver, "screensaver_components", appDream)
         Settings.Secure.putInt(resolver, "screensaver_enabled", 1)
         val wallpaper = context.getSharedPreferences("wallpaper", Context.MODE_PRIVATE)
-        AerialSettings.init(context)
-        val previousDelay = AerialSettings.screensaverMinutes
-        try {
-            AerialSettings.chooseScreensaverMinutes(AerialSettings.NEVER)
-            assertEquals(if (BuildConfig.PREVIEW) 1 else 0, Settings.Secure.getInt(resolver, "screensaver_enabled"))
+        context.getSharedPreferences("settings", Context.MODE_PRIVATE).edit()
+            .putInt("screensaver_minutes", AerialSettings.NEVER).apply()
+        GuardSetup.setSystemScreensaverOff(context, true)
+        assertEquals(if (BuildConfig.PREVIEW) 1 else 0, Settings.Secure.getInt(resolver, "screensaver_enabled"))
 
-            wallpaper.edit().putString("screensaver", "system").apply()
-            GuardSetup.screensaverModeChanged(context)
-            assertEquals(1, Settings.Secure.getInt(resolver, "screensaver_enabled"))
-            assertEquals(if (BuildConfig.PREVIEW) appDream else firmware, Settings.Secure.getString(resolver, "screensaver_components"))
+        wallpaper.edit().putString("screensaver", "system").apply()
+        GuardSetup.screensaverModeChanged(context)
+        assertEquals(1, Settings.Secure.getInt(resolver, "screensaver_enabled"))
+        assertEquals(if (BuildConfig.PREVIEW) appDream else firmware, Settings.Secure.getString(resolver, "screensaver_components"))
 
-            wallpaper.edit().putString("screensaver", "aerial").apply()
-            GuardSetup.screensaverModeChanged(context)
-            assertEquals(appDream, Settings.Secure.getString(resolver, "screensaver_components"))
-            assertEquals(if (BuildConfig.PREVIEW) 1 else 0, Settings.Secure.getInt(resolver, "screensaver_enabled"))
-        } finally {
-            AerialSettings.chooseScreensaverMinutes(previousDelay)
-        }
+        wallpaper.edit().putString("screensaver", "aerial").apply()
+        GuardSetup.screensaverModeChanged(context)
+        assertEquals(appDream, Settings.Secure.getString(resolver, "screensaver_components"))
+        assertEquals(if (BuildConfig.PREVIEW) 1 else 0, Settings.Secure.getInt(resolver, "screensaver_enabled"))
     }
 }

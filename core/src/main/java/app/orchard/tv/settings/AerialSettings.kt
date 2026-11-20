@@ -72,6 +72,7 @@ enum class ClockHours(val key: String) {
 /** Aerial's own preferences. Compose state, written on the main thread only. */
 object AerialSettings {
     private const val PREFS = "settings"
+    private const val SCREENSAVER_MINUTES = "screensaver_minutes"
     private var started = false
     private lateinit var app: Context
 
@@ -268,7 +269,7 @@ object AerialSettings {
             else -> UiSounds.Aerial
         }
         backStartsScreensaver = prefs.getBoolean("back_starts_screensaver", true)
-        screensaverMinutes = prefs.getInt("screensaver_minutes", DEFAULT_SCREENSAVER_MINUTES)
+        screensaverMinutes = prefs.getInt(SCREENSAVER_MINUTES, DEFAULT_SCREENSAVER_MINUTES)
         aerialQuality = AerialQuality.of(prefs.getString("aerial_quality", null))
         effects = Effects.of(prefs.getString("effects", null))
         lowEnd = DeviceClass.lowEnd(app)
@@ -405,9 +406,14 @@ object AerialSettings {
 
     fun chooseScreensaverMinutes(minutes: Int) {
         screensaverMinutes = minutes
-        app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putInt("screensaver_minutes", minutes) }
+        app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putInt(SCREENSAVER_MINUTES, minutes) }
         GuardSetup.setSystemScreensaverOff(app, minutes == NEVER)
     }
+
+    /** The guard can restore the system screensaver before Home loads its in-memory settings. */
+    fun screensaverTimerDisabled(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getInt(SCREENSAVER_MINUTES, DEFAULT_SCREENSAVER_MINUTES) == NEVER
 
     fun chooseCecSwitch(on: Boolean) {
         cecSwitch = on

@@ -615,7 +615,7 @@ object GuardSetup {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_SECURE_SETTINGS) != PackageManager.PERMISSION_GRANTED) return
         if (!systemChosen(context)) {
             keepScreensaver(context)
-            if (AerialSettings.screensaverMinutes == AerialSettings.NEVER) setSystemScreensaverOff(context, true)
+            if (AerialSettings.screensaverTimerDisabled(context)) setSystemScreensaverOff(context, true)
             return
         }
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
