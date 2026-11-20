@@ -76,6 +76,23 @@ adb install -r nookscreen-daily.apk
 
 Open NookScreen from the app list. If you still cannot set it as the default, you can launch it from there or consult the [device notes](docs/devices/).
 
+### Install with an AI agent
+
+Use an AI agent that can run terminal commands on a computer on the same local network as your TV. Enable debugging with the [device-specific ADB notes](docs/devices/adb-by-brand.md) and note the TV’s connection IP and port. Your TV may ask you to pair from the local terminal or approve debugging with the remote. [Android wireless debugging guide](https://developer.android.com/tools/adb#wireless)
+
+Copy this prompt into your agent and fill in the bracketed fields.
+
+```text
+Install the stable NookScreen APK on my Android TV using ADB. The TV model is [model] and its debugging address is [IP:port].
+Download the official APK from this URL
+https://github.com/Vanlee0129/nookscreen/releases/latest/download/nookscreen-daily.apk
+Connect to the TV, verify the target with adb devices -l, and target it with adb -s in subsequent commands. Prompt me if pairing or approval is required.
+Use install -r to preserve existing NookScreen data. Stop and report any signature conflict, downgrade, or installation error.
+Open NookScreen and verify the package ID app.nookscreen.tv and the installed version. I’ll choose the default Home app and accessibility settings on the TV.
+```
+
+Once the agent reports success, use the remote to confirm that NookScreen Home opens. Follow step 3 above if you want to make it your default Home app.
+
 ### Compatibility and restoring the original launcher
 
 Check that the TV can install Android APKs, then look up its model. Default Home, wake-from-standby and HDMI behavior vary by firmware. The device notes include earlier upstream Aerial tests, so check which firmware and app version each note covers.

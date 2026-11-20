@@ -124,6 +124,17 @@ nav a, .actions a { display: inline-flex; align-items: center; min-height: 44px;
 .install ol { margin: 0; padding-inline-start: 1.4em; color: var(--color-muted); }
 .install li { padding-inline-start: 8px; padding-block: 12px; border-bottom: 1px solid var(--color-rule); }
 .install li::marker { color: var(--color-accent); }
+.agent-install { grid-column: 1 / -1; min-width: 0; }
+.agent-install pre {
+  margin: 20px 0 0;
+  padding: 16px 20px;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-panel);
+  background: var(--color-paper-2);
+  font-family: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 kbd, code { color: var(--color-ink); overflow-wrap: anywhere; }
 footer {
   display: flex;

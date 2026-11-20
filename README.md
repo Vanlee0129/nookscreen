@@ -77,6 +77,22 @@ adb install -r nookscreen-daily.apk
 
 安装后从应用列表打开栖屏。如果主页键还是会回到原桌面，可以继续从应用列表打开栖屏，也可以查阅对应的[机型适配记录](docs/devices/)。
 
+### 用 AI Agent 安装
+
+在与电视同一局域网的电脑上打开能运行终端命令的 AI Agent。按[机型说明](docs/devices/adb-by-brand.md)打开电视的 ADB 调试，记下连接用的 IP 和端口。有些电视会要求先在本地终端配对，或用遥控器确认调试授权。 [ADB 无线调试说明](https://developer.android.com/tools/adb#wireless)
+
+把下面这段发给 Agent，将方括号里的内容换成电视上的信息。
+
+```text
+请用 ADB 在我的 Android TV 上安装栖屏正式版。电视型号是［型号］，调试连接地址是［IP:端口］。
+从 https://github.com/Vanlee0129/nookscreen/releases/latest/download/nookscreen-daily.apk 下载 APK。
+连接电视后用 adb devices -l 核对目标，给后续命令加 adb -s 指定设备。需要配对或授权时请提示我确认。
+使用 install -r 安装，保留已安装栖屏的数据。签名冲突、版本降级或安装失败时停下并报告原因。
+安装后打开栖屏，核对包名 app.nookscreen.tv 和已安装版本。默认桌面和无障碍设置由我在电视上选择。
+```
+
+Agent 报告安装成功后，用遥控器确认栖屏首页能打开。如需把栖屏设为默认桌面，按上面的第 3 步操作。
+
 ### 兼容性与恢复
 
 先确认电视能装 Android APK，再看具体机型。不同固件对默认桌面、待机唤醒和 HDMI 的限制各不相同。以下机型笔记也收录了上游 Aerial 的历史测试，查看时请留意记录里的固件和应用版本。
