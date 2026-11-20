@@ -88,6 +88,7 @@
         <div class="actions">
           <a class="primary" href="https://github.com/Vanlee0129/nookscreen/releases/latest/download/nookscreen-daily.apk">Download APK</a>
           <a href="https://github.com/Vanlee0129/nookscreen/blob/main/README.en.md#install">Full installation guide</a>
+          <a href="#install-agent">Install with an AI agent</a>
         </div>
       </div>
       <ol>
@@ -95,6 +96,17 @@
         <li>Open NookScreen. Press <kbd>↑</kbd>, then <kbd>OK</kbd> on the status button for Control Center.</li>
         <li>Set NookScreen as the default Home app in Android settings, or use <strong>Make NookScreen Your Home Screen</strong>.</li>
       </ol>
+      <div class="agent-install" aria-labelledby="install-agent">
+        <h3 id="install-agent">Install with an AI agent</h3>
+        <p>Use an agent that can run terminal commands on a computer on the same local network as your TV. Enable debugging with the <a href="https://github.com/Vanlee0129/nookscreen/blob/main/docs/devices/adb-by-brand.md">device-specific ADB notes</a> and note the TV’s connection IP and port. Copy the prompt below and fill in the bracketed fields.</p>
+        <pre>Install the stable NookScreen APK on my Android TV using ADB. The TV model is [model] and its debugging address is [IP:port].
+Download the official APK from this URL
+https://github.com/Vanlee0129/nookscreen/releases/latest/download/nookscreen-daily.apk
+Connect to the TV, verify the target with adb devices -l, and target it with adb -s in subsequent commands. Prompt me if pairing or approval is required.
+Use install -r to preserve existing NookScreen data. Stop and report any signature conflict, downgrade, or installation error.
+Open NookScreen and verify the package ID app.nookscreen.tv and the installed version. I’ll choose the default Home app and accessibility settings on the TV.</pre>
+        <p>Use the remote to confirm that NookScreen Home opens. Follow step 3 above if you want to make it your default Home app.</p>
+      </div>
     </section>
   </main>
   <footer class="wrap">
