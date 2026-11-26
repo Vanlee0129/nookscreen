@@ -15,16 +15,18 @@
   <img src="docs/screenshots/sanrio-home.jpg" width="960" alt="NookScreen on a Xiaomi TV with the Sanrio Strawberry Picnic wallpaper and themed tiles">
 </div>
 
+**v0.0.10** improves remote focus and screen reader support, adds searchable theme artwork to the phone setup page, and fixes a Home screen freeze with video wallpapers on some TVs. [Release notes](https://github.com/Vanlee0129/nookscreen/releases/tag/v0.0.10)
+
 ## What you can do
 
 | Task | Where to start |
 | --- | --- |
-| Arrange your apps | Hold **OK** on a tile to move or hide an app, or put it in a folder. Restore hidden apps in personalization settings. |
+| Arrange your apps | Hold **OK** on a tile to move or hide an app, or put it in a folder. When you move focus in a folder, the whole row scrolls into view with its app labels. Restore hidden apps in personalization settings. |
 | Switch between layouts | Duplicate a scene under **Control Center → Desktop scenes**. Keep streaming apps together in one scene and HDMI and games in another. |
 | Put HDMI on Home | Choose supported inputs under **Favorite inputs** for the current scene. Highlight a tile and press **OK** to switch inputs. |
 | Check HDMI connections | Open **Control Center → Inputs**. NookScreen checks connections each time Control Center opens. After plugging or unplugging a device, close and reopen it to see the latest status. |
 | Change the wallpaper, clock or layout | Under **Control Center → Themes → Wallpaper and personalization**, choose a wallpaper, one or two rows, tiles per row, and the clock’s size and position. |
-| Set up Home from your phone | Connect the TV and phone to the same local network and scan the code under **Wallpaper and personalization**. Upload photos and videos, change app artwork, drag to reorder tiles or choose a weather city. |
+| Set up Home from your phone | Connect the TV and phone to the same local network and scan the code under **Wallpaper and personalization**. Upload photos and videos, pick artwork from a theme, drag to reorder tiles or choose a weather city. |
 | Set a screensaver | Under **Wallpaper and personalization → Screensaver**, choose a clock, photos, aerial footage or [your own video](docs/SCREENSAVER_VIDEOS.md), then set the idle time. Turn off **Place names and titles** on the TV or phone setup page to hide those labels. The clock has its own switch. |
 | Set up the TV for children or older adults | Open **Kids and Elders** in personalization settings and choose which apps to show. Kids Mode also supports daily time limits and scheduled breaks. |
 | Check the picture, remote or network | Open **Control Center → TV self-check**. Inspect the picture with solid colors, grayscale and edge markers, see which buttons reach NookScreen, or scan a code to check the local connection. The phone page lets you copy a diagnostic report under **Report an Issue**. |
@@ -38,6 +40,8 @@ Each scene keeps its own app order, folders, hidden apps, favorite inputs and ap
 | **Up**, then **OK** on Home | Focus the status button in the top right, then open Control Center. |
 | Hold **OK** on a tile | Open the tile menu to arrange apps or remove a pinned input. |
 | **Back** on the first row | Start the screensaver immediately if the shortcut is enabled. |
+
+Screen readers announce tile names, Control Center buttons, and the volume and brightness levels. Accessibility actions let you open an app, open its tile menu, or adjust the sliders.
 
 ### Screenshots
 
@@ -117,7 +121,9 @@ On the TV, open **Control Center → Themes** and select a theme to download it.
 
 Each pack has 25 dedicated tiles, including XiaoAI, Calendar, App Center, Wireless Cast and Mi Home. Other apps keep their artwork with a matching frame. Artwork you upload or explicitly select takes priority. [Theme coverage and artwork notes](docs/themes.md)
 
-To reuse a look, choose **Save current appearance** on the Themes page. Use the phone setup page to change app artwork while the custom theme is active. You can use that theme in multiple scenes.
+To change an app’s artwork, tap its tile on the phone setup page and choose **Choose a theme icon**. Search by app or theme name to browse artwork from enabled themes.
+
+Choose **Save current appearance** on the Themes page to create a custom theme. Artwork you pick while that theme is active is saved to it. You can use the same custom theme across scenes.
 
 ## Updates and troubleshooting
 
@@ -132,7 +138,7 @@ To reuse a look, choose **Save current appearance** on the Themes page. Use the 
 - **Why does Home still open the original launcher after installation?** Open NookScreen from the TV’s app list. To change what Home opens, set the default Home app in Android settings or follow **Control Center → Make NookScreen Your Home Screen** to enable Home Guard. The available options depend on your TV firmware.
 - **Why does Home Guard send me back to Home when I switch screens in an app?** Starting in v0.0.8, Home Guard gives screen changes time to settle so it can keep the app in front while you navigate.
 - **How do I switch back to the TV’s own screensaver?** Choose **System** under **Wallpaper and personalization → Screensaver**. Starting in v0.0.9, NookScreen re-enables the system screensaver if it previously turned it off. If it took over as the system screensaver and has permission, it returns control to the TV.
-- **What if the weather is temporarily unavailable?** Starting in v0.0.9, NookScreen retries while Home or the screensaver is visible. You can also set your city on the phone setup page.
+- **How old is the weather reading?** Home shows the age after three hours and hides the reading after 12 hours until fresh data arrives. NookScreen retries while Home or the screensaver is visible. You can also set your city on the phone setup page.
 - **Why doesn’t the setup page open after scanning the code?** Check that the phone and TV are on the same local network and the TV is on. You can also enter the address shown on the TV in a computer browser on that network.
 - **Why do some apps keep their original artwork after I switch themes?** A theme supplies artwork for the apps listed in its coverage. Other apps get the theme’s frame around their usual icon. Artwork you choose manually takes priority. [Theme coverage](docs/themes.md)
 

@@ -402,4 +402,15 @@
         <item>灰阶</item>
         <item>屏幕边缘</item>
     </string-array>
+    <string name="a11y_delete">删除</string>
+    <string name="weather_hours_ago">%d 小时前</string>
+    <string name="a11y_increase">调高</string>
+    <string name="a11y_decrease">调低</string>
+    <string name="st_sounds_off_hint">关闭栖屏的操作提示音。</string>
+    <string name="st_effects_full_hint">开启玻璃底板和应用磁贴的焦点动效。</string>
+    <string name="st_effects_auto_full_hint">这台电视在自动模式下使用完整效果。</string>
+    <string name="ss_aerial_hint">播放航拍影片。</string>
+    <string name="ss_photos_hint">轮流展示你上传的照片。</string>
+    <string name="ss_clock_hint">在深色背景上显示时钟。</string>
+    <string name="ss_preview_hint">预览当前选中的屏保。</string>
 </resources>

@@ -1444,12 +1444,20 @@ class HomeGuardService : AccessibilityService() {
         // Any key that is done: whatever it did to the volume (Control Center's slider) is in.
         if (event.action == KeyEvent.ACTION_UP) volumeSeen = volumeNow()
         if (event.keyCode != KeyEvent.KEYCODE_HOME && !isStrayHome(event)) return false
-        if (takeCecHome(event)) return true
-        if (isDefaultHome() && !defaultHomeNeedsHomeFilter) return false
+        val pressed = event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0
+        if (takeCecHome(event)) {
+            if (pressed) DiagLog.i("guard: Home key taken (HDMI-CEC)")
+            return true
+        }
+        if (isDefaultHome() && !defaultHomeNeedsHomeFilter) {
+            if (pressed) DiagLog.i("guard: Home key left to the system (default Home)")
+            return false
+        }
         // Held, Home is the firmware's task center, which taking the key hid (Xiaomi, issue #185):
         // open the recent apps instead, and leave Home alone when the key comes up. Timed here:
         // the filter sees keys before Android makes the repeats that would say the key is held.
-        if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+        if (pressed) {
+            DiagLog.i("guard: Home key taken (accessibility filter)")
             homeHeld = false
             homeDownTakenAt = SystemClock.uptimeMillis()
             handler.removeCallbacks(homeDownLapsed)

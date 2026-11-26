@@ -701,6 +701,17 @@ object SystemProbe {
         return intent.takeIf { runCatching { pm.resolveService(it, 0) }.getOrNull() != null }
     }
 
+    /** TCL Google TV (G10, #1762) opens the firmware panel on the input key with this service. */
+    fun tclQuickPanel(context: Context): Boolean {
+        val pm = context.packageManager
+        val component = ComponentName("com.tcl.suspension", "com.tcl.suspension.DismissService")
+        return runCatching {
+            // getServiceInfo with flags 0 follows the firmware and per-user enabled settings.
+            val info = pm.getServiceInfo(component, 0)
+            info.enabled && info.applicationInfo.enabled
+        }.getOrDefault(false)
+    }
+
     /**
      * Coocaa's Quick Panel (Skyworth 75A7D, 8R134_A7D, Android 11): the firmware opens its own
      * signal-source panel on the remote's input key, from a window of com.coocaa.os.ccosservice,

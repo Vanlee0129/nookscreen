@@ -22,6 +22,8 @@ object ThemePackArt {
         return decode(theme, file, TileArtFactory.W * 2, TileArtFactory.W)?.let { BitmapDrawable(context.resources, it) }
     }
 
+    internal fun tileThumbnail(theme: InstalledTheme, file: String): Bitmap? = decode(theme, file, 240, 135)
+
     fun wallpaper(context: Context, pack: ThemePack, width: Int, height: Int): Bitmap? {
         val theme = ThemePlugins.of(context).active(pack.key) ?: return null
         val image = if (width <= 384 && height <= 216) theme.manifest.preview else theme.manifest.wallpaper

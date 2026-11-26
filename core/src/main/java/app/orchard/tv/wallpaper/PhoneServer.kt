@@ -11,6 +11,7 @@ import androidx.core.content.getSystemService
 import app.orchard.tv.apps.AppCatalog
 import app.orchard.tv.apps.BundledIcons
 import app.orchard.tv.settings.HomeThemes
+import app.orchard.tv.plugins.InstalledTheme
 import app.orchard.tv.plugins.PluginResult
 import app.orchard.tv.plugins.ThemePlugins
 import app.orchard.tv.plugins.ThemeReleases
@@ -154,6 +155,11 @@ class PhoneServer private constructor(private val context: Context, private val 
                 }
                 path.startsWith("/tile/") -> tile(java.net.URLDecoder.decode(path.removePrefix("/tile/"), "UTF-8"), own = session.parameters["art"]?.firstOrNull() == "own")
                 path.startsWith("/library/") -> libraryPicture(java.net.URLDecoder.decode(path.removePrefix("/library/"), "UTF-8"), session.parameters["c"]?.firstOrNull())
+                session.method == Method.GET && path == "/api/theme-icons" -> themeIcons()
+                session.method == Method.GET && path == "/theme-icon" -> themeIconThumbnail(
+                    session.parameters.mapValues { it.value.firstOrNull().orEmpty() },
+                )
+                session.method == Method.POST && path == "/api/theme-icon/pick" -> pickThemeIcon(form(session))
                 session.method == Method.POST && path == "/api/icon" -> icon(session)
                 session.method == Method.POST && path == "/api/source/name" -> {
                     val f = form(session)
@@ -359,7 +365,7 @@ class PhoneServer private constructor(private val context: Context, private val 
             .put("weather", JSONObject().apply {
                 put("place", Weather.place ?: "")
                 put("chosen", Weather.chosen)
-                Weather.now?.let { put("celsius", it.celsius); put("kind", it.kind.name.lowercase()); put("day", it.day) }
+                Weather.shown()?.let { put("celsius", it.celsius); put("kind", it.kind.name.lowercase()); put("day", it.day) }
             })
     }
 
@@ -415,6 +421,45 @@ class PhoneServer private constructor(private val context: Context, private val 
     private fun installed(pkg: String) =
         pkg.isNotEmpty() && (AppCatalog.loaded.any { it.key == pkg } || AppCatalog.pinnedSources.any { it.key == pkg })
 
+    private fun themeIcons(): Response {
+        val apps = AppCatalog.loaded.associateBy { it.key }
+        val icons = JSONArray()
+        for (theme in ThemePlugins.of(context).installed.value.values.filter { it.active }) {
+            val title = theme.title(context)
+            for ((pkg, file) in theme.manifest.tiles) {
+                val name = AppNames.of(pkg) ?: apps[pkg]?.label
+                    ?: file.substringAfterLast('/').substringBeforeLast('.').replace('-', ' ').replace('_', ' ')
+                icons.put(JSONObject().put("theme", theme.manifest.id).put("themeName", title)
+                    .put("source", pkg).put("name", name).put("stamp", theme.stamp))
+            }
+        }
+        return json(JSONObject().put("icons", icons)).apply { addHeader("Cache-Control", "no-store") }
+    }
+
+    private fun <T> readThemeIcon(params: Map<String, String>, read: (InstalledTheme, String) -> T): T? {
+        val theme = ThemePlugins.of(context).active(params["theme"].orEmpty()) ?: return null
+        if (theme.stamp != params["stamp"]?.toLongOrNull()) return null
+        val file = theme.manifest.tiles[params["source"]] ?: return null
+        return read(theme, file)
+    }
+
+    private fun themeIconThumbnail(params: Map<String, String>): Response {
+        val bitmap = readThemeIcon(params, ThemePackArt::tileThumbnail)
+            ?: return text(Response.Status.NOT_FOUND, "")
+        return tileJpeg(bitmap, "max-age=600")
+    }
+
+    private fun pickThemeIcon(form: Map<String, String>): Response {
+        val pkg = form["app"].orEmpty()
+        val target = HomeThemes.activeSelection(context).customId
+        val saved = form["targetTheme"] == target.orEmpty() && AppCatalog.loaded.any { it.key == pkg } &&
+            readThemeIcon(form) { theme, file ->
+                theme.read(file) { CustomIcons.save(pkg, it, context.cacheDir, target) }
+            } == true
+        if (saved) onMain { CustomIcons.changed() }
+        return json(state().put("saved", saved))
+    }
+
     /** The tile as Home shows it; with [own], as the app's own art would draw it. */
     private fun tile(pkg: String, own: Boolean = false): Response {
         val app = (AppCatalog.pinnedSources + AppCatalog.loaded + AppCatalog.folders).firstOrNull { it.key == pkg } ?: return text(Response.Status.NOT_FOUND, "")
@@ -432,12 +477,19 @@ class PhoneServer private constructor(private val context: Context, private val 
                 ?: (if (pick == IconLibrary.Pick.Library) IconLibrary.load(pkg) else null)
                 ?: TileArtFactory.flatten(app.art)
         }
+        return tileJpeg(bmp, "no-store")
+    }
+
+    private fun tileJpeg(bitmap: Bitmap, cacheControl: String): Response {
         val out = ByteArrayOutputStream()
-        bmp.compress(Bitmap.CompressFormat.JPEG, 85, out)
-        bmp.recycle()
+        try {
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 85, out)
+        } finally {
+            bitmap.recycle()
+        }
         val bytes = out.toByteArray()
         return newFixedLengthResponse(Response.Status.OK, "image/jpeg", ByteArrayInputStream(bytes), bytes.size.toLong()).apply {
-            addHeader("Cache-Control", "no-store")
+            addHeader("Cache-Control", cacheControl)
         }
     }
 

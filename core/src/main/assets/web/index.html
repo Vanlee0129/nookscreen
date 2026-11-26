@@ -222,6 +222,17 @@
   .sheet .list { background: var(--card); }
   @media (prefers-color-scheme: dark) { .sheet .list { background: #2c2c2e; } }
   .sheet .list + .list { margin-top: 10px; }
+  .theme-icon-search {
+    width: 100%; margin-bottom: 12px; border: 0; border-radius: 10px; padding: 10px 12px;
+    background: var(--card); color: var(--label); font: inherit;
+  }
+  .theme-icon-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 0 12px; }
+  .theme-icon-choice { min-width: 0; border: 0; background: var(--card); border-radius: 12px; padding: 6px; text-align: start; }
+  .theme-icon-choice:focus-visible { outline: 2px solid var(--tint); outline-offset: 1px; }
+  .theme-icon-choice img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; background: var(--fill); border-radius: 8px; }
+  .theme-icon-choice span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 4px; }
+  .theme-icon-choice span:first-of-type { margin-top: 5px; }
+  .theme-icon-choice .sub { color: var(--secondary); font-size: 12px; }
 
   .toast {
     position: fixed; z-index: 30; left: 50%; bottom: calc(var(--tabbar) + 16px); transform: translate(-50%, 12px);
@@ -410,7 +421,7 @@ let state = null, stateJson = '';
 
 // The language: ?lang=ru in the address, else the one picked under More (kept on the phone), else the
 // first of the phone's preferred languages that has a table, else English. Keys are in KEYS, one array of texts per language.
-const KEYS = ["screensaver", "screensaver_short", "ss_aerial", "ss_photos", "ss_clock", "focus", "focus_high", "focus_standard", "weather", "city_ph", "set", "upload_label", "feedback_h", "feedback_hint", "diag_show", "diag_copy", "diag_github", "hint_aerial", "hint_photos", "hint_clock", "g_live", "g_live_sub", "g_daily", "g_daily_sub", "g_photo", "g_builtin", "g_auto", "toast_wallpaper", "aria_delete", "confirm_delete", "wx_clear", "wx_partlycloudy", "wx_cloudy", "wx_fog", "wx_rain", "wx_snow", "wx_thunder", "wx_chosen", "wx_auto_btn", "toast_auto", "wx_guessed", "wx_none", "tag_source", "aria_rename", "toast_renamed", "toast_name_reset", "toast_rename_fail", "aria_reset_icon", "toast_icon_reset", "focus_hint_standard", "focus_hint_high", "daily_title", "daily_caption", "rotate_title", "rotate_caption", "empty_photos", "add_second", "toast_tv_updated", "sending_n", "toast_added", "toast_no_photos", "toast_send_fail", "toast_city_set", "toast_city_nf", "toast_set_fail", "toast_sending_icon", "toast_icon_set", "toast_icon_bad", "diag_collecting", "toast_diag_fail", "toast_copied", "toast_copy_manual", "language", "hint_follows", "ss_videos", "hint_videos", "videos_h", "videos_upload", "videos_hint", "videos_empty", "confirm_video_delete", "toast_videos_added", "toast_video_bad", "sending_video", "hint_system", "tab_home", "tab_more", "current_wp", "cancel", "save", "name_ph", "rename_hint", "change_icon", "this_tv", "folder_count", "folder_ph", "inputs_h", "inputs_hint", "rename_hint_app", "was_named", "arrange_hint", "arrange_unready", "hidden_h", "hidden_none", "hidden_locked", "show_app", "hide_app", "to_folder", "new_folder", "out_of_folder", "ungroup", "ungroup_confirm", "folder_hint", "toast_hidden", "toast_shown", "toast_in_folder", "toast_out_folder", "toast_ungrouped", "tab_looks", "looks_title", "show_on_home", "source_device", "source_plain", "source_device_hint", "tv_model", "sw_always", "sw_always_sub", "sw_weather", "sw_saver_time", "sw_saver_time_sub", "sw_saver_caption", "sw_saver_caption_sub", "g_source_sub", "icon_h", "icon_library", "icon_own", "icon_custom", "toast_icon_picked", "drop_hint", "drop_sub", "drop_none", "toast_diag_paste", "kids_h", "elders_h", "kids_used", "kids_left", "kids_nolimit", "kids_allowed", "kids_lock_day", "kids_lock_late", "kids_lock_break", "kids_pin_ph", "kids_unlock", "kids_wrong", "kids_need_pin", "kids_locked_foot", "kids_add", "kids_day", "kids_leave_k", "kids_leave_e", "kids_paused", "kids_resume", "kids_min", "kids_hm", "kids_erase", "kids_hr", "kids_both", "kids_off_line", "kids_settings", "kids_no_pin", "kids_pin_foot", "ks_meta", "ks_on", "ks_on_sub", "ks_block", "ks_block_sub", "ks_block_noguard", "ks_time_h", "ks_weekday", "ks_weekend", "ks_minutes", "ks_nolimit", "ks_window", "ks_from", "ks_to", "ks_break", "ks_break_every", "ks_break_len", "ks_time_foot", "ks_apps", "ks_apps_sub", "ks_input", "ks_save", "ks_saved", "ks_invalid", "ks_for", "wx_temp", "theme_icon_target", "plugin_themes", "plugin_add", "plugin_working", "plugin_enable", "plugin_disable", "plugin_disabled", "plugin_apply", "plugin_update", "plugin_remove", "plugin_incompatible_short"];
+const KEYS = ["screensaver", "screensaver_short", "ss_aerial", "ss_photos", "ss_clock", "focus", "focus_high", "focus_standard", "weather", "city_ph", "set", "upload_label", "feedback_h", "feedback_hint", "diag_show", "diag_copy", "diag_github", "hint_aerial", "hint_photos", "hint_clock", "g_live", "g_live_sub", "g_daily", "g_daily_sub", "g_photo", "g_builtin", "g_auto", "toast_wallpaper", "aria_delete", "confirm_delete", "wx_clear", "wx_partlycloudy", "wx_cloudy", "wx_fog", "wx_rain", "wx_snow", "wx_thunder", "wx_chosen", "wx_auto_btn", "toast_auto", "wx_guessed", "wx_none", "tag_source", "aria_rename", "toast_renamed", "toast_name_reset", "toast_rename_fail", "aria_reset_icon", "toast_icon_reset", "focus_hint_standard", "focus_hint_high", "daily_title", "daily_caption", "rotate_title", "rotate_caption", "empty_photos", "add_second", "toast_tv_updated", "sending_n", "toast_added", "toast_no_photos", "toast_send_fail", "toast_city_set", "toast_city_nf", "toast_set_fail", "toast_sending_icon", "toast_icon_set", "toast_icon_bad", "diag_collecting", "toast_diag_fail", "toast_copied", "toast_copy_manual", "language", "hint_follows", "ss_videos", "hint_videos", "videos_h", "videos_upload", "videos_hint", "videos_empty", "confirm_video_delete", "toast_videos_added", "toast_video_bad", "sending_video", "hint_system", "tab_home", "tab_more", "current_wp", "cancel", "save", "name_ph", "rename_hint", "change_icon", "this_tv", "folder_count", "folder_ph", "inputs_h", "inputs_hint", "rename_hint_app", "was_named", "arrange_hint", "arrange_unready", "hidden_h", "hidden_none", "hidden_locked", "show_app", "hide_app", "to_folder", "new_folder", "out_of_folder", "ungroup", "ungroup_confirm", "folder_hint", "toast_hidden", "toast_shown", "toast_in_folder", "toast_out_folder", "toast_ungrouped", "tab_looks", "looks_title", "show_on_home", "source_device", "source_plain", "source_device_hint", "tv_model", "sw_always", "sw_always_sub", "sw_weather", "sw_saver_time", "sw_saver_time_sub", "sw_saver_caption", "sw_saver_caption_sub", "g_source_sub", "icon_h", "icon_library", "icon_own", "icon_custom", "toast_icon_picked", "drop_hint", "drop_sub", "drop_none", "toast_diag_paste", "kids_h", "elders_h", "kids_used", "kids_left", "kids_nolimit", "kids_allowed", "kids_lock_day", "kids_lock_late", "kids_lock_break", "kids_pin_ph", "kids_unlock", "kids_wrong", "kids_need_pin", "kids_locked_foot", "kids_add", "kids_day", "kids_leave_k", "kids_leave_e", "kids_paused", "kids_resume", "kids_min", "kids_hm", "kids_erase", "kids_hr", "kids_both", "kids_off_line", "kids_settings", "kids_no_pin", "kids_pin_foot", "ks_meta", "ks_on", "ks_on_sub", "ks_block", "ks_block_sub", "ks_block_noguard", "ks_time_h", "ks_weekday", "ks_weekend", "ks_minutes", "ks_nolimit", "ks_window", "ks_from", "ks_to", "ks_break", "ks_break_every", "ks_break_len", "ks_time_foot", "ks_apps", "ks_apps_sub", "ks_input", "ks_save", "ks_saved", "ks_invalid", "ks_for", "wx_temp", "theme_icon_target", "plugin_themes", "plugin_add", "plugin_working", "plugin_enable", "plugin_disable", "plugin_disabled", "plugin_apply", "plugin_update", "plugin_remove", "plugin_incompatible_short", "theme_icon_browse", "theme_icon_search", "theme_icon_empty", "theme_icon_loading", "theme_icon_load_fail"];
 const TEXTS = {
  "zh": [
   "屏幕保护程序",
@@ -612,6 +623,7 @@ const TEXTS = {
   "{n}℃",
   "这个图标会保存到「{name}」主题里。",
     "主题", "安装", "下载中…", "启用", "停用", "已停用", "应用", "检查更新", "移除", "不兼容",
+    "从主题挑选图标", "搜索应用或主题", "没有找到图标", "正在加载图标…", "图标加载失败",
  ],
  "en": [
   "Screensaver",
@@ -813,6 +825,7 @@ const TEXTS = {
   "{n}°",
   "This icon will be saved to “{name}”.",
     "Themes", "Install", "Downloading…", "Enable", "Disable", "Disabled", "Apply", "Check for update", "Remove", "Incompatible",
+    "Choose a theme icon", "Search apps or themes", "No icons found", "Loading icons…", "Could not load icons",
  ],
  "ru": [
   "Заставка",
@@ -1014,6 +1027,7 @@ const TEXTS = {
   "{n}°",
   "Значок будет сохранён в теме «{name}».",
     "Темы", "Установить", "Загрузка…", "Включить", "Отключить", "Отключён", "Применить", "Проверить обновление", "Удалить", "Несовместим",
+    "Выбрать значок из темы", "Поиск приложений или тем", "Значки не найдены", "Загрузка значков…", "Не удалось загрузить значки",
  ],
  "uk": [
   "Заставка",
@@ -1215,6 +1229,7 @@ const TEXTS = {
   "{n}°",
   "Значок буде збережено в темі «{name}».",
     "Теми", "Встановити", "Завантаження…", "Увімкнути", "Вимкнути", "Вимкнено", "Застосувати", "Перевірити оновлення", "Видалити", "Несумісний",
+    "Вибрати піктограму з теми", "Пошук застосунків або тем", "Піктограм не знайдено", "Завантаження піктограм…", "Не вдалося завантажити піктограми",
  ],
  "kk": [
   "Экран қорғаушы",
@@ -1416,6 +1431,7 @@ const TEXTS = {
   "{n}°",
   "Белгіше «{name}» тақырыбына сақталады.",
     "Тақырыптар", "Орнату", "Жүктелуде…", "Қосу", "Өшіру", "Өшірілген", "Қолдану", "Жаңартуды тексеру", "Жою", "Үйлесімсіз",
+    "Тақырыптан белгіше таңдау", "Қолданбалар мен тақырыптарды іздеу", "Белгішелер табылмады", "Белгішелер жүктелуде…", "Белгішелер жүктелмеді",
  ]
 };
 const LANGS = Object.keys(TEXTS);
@@ -2140,6 +2156,9 @@ function tileSheet(e, inFolder, hidden) {
     }
     // The picker opens from this tap, so iOS treats it as the user's own gesture.
     if (state.customThemeName) body.appendChild(el('p', 'foot', t('theme_icon_target', { name: state.customThemeName })));
+    if (!a.source && (state.themePlugins || []).some(p => p.version > 0 && p.enabled && p.compatible)) {
+      action(il, t('theme_icon_browse'), 'tint', () => themeIconChooser(a, e));
+    }
     action(il, t('change_icon'), 'tint', () => { iconFor = { ...a, theme: state.customThemeId || '' }; $('#iconFile').click(); closeSheet(); });
     if (a.custom) action(il, t('aria_reset_icon'), 'tint', async () => {
       closeSheet();
@@ -2158,6 +2177,69 @@ function tileSheet(e, inFolder, hidden) {
     const c = el('div', 'list'); c.style.marginTop = '12px'; body.appendChild(c);
     action(c, t('cancel'), 'tint', closeSheet).style.fontWeight = '600';
   });
+}
+async function themeIconChooser(a, e) {
+  const body = $('#sheetBody'); body.replaceChildren();
+  const targetTheme = state.customThemeId || '';
+  body.append(el('h3', '', t('theme_icon_browse')), el('p', 'meta', e.label));
+  const search = el('input', 'theme-icon-search');
+  search.type = 'search';
+  search.placeholder = t('theme_icon_search');
+  search.setAttribute('aria-label', search.placeholder);
+  search.disabled = true;
+  const grid = el('div', 'theme-icon-grid');
+  grid.setAttribute('aria-busy', 'true');
+  const message = el('p', 'meta', t('theme_icon_loading'));
+  message.setAttribute('role', 'status');
+  const controls = el('div', 'list');
+  action(controls, t('cancel'), 'tint', closeSheet);
+  body.append(search, grid, message, controls);
+
+  try {
+    const { icons } = await api('api/theme-icons');
+    if (!body.contains(grid)) return;
+    let saving = false;
+    icons.sort((x, y) => Number(y.source === a.key) - Number(x.source === a.key) ||
+      x.name.localeCompare(y.name, LANG) || x.themeName.localeCompare(y.themeName, LANG));
+    const entries = icons.map(icon => {
+      const identity = { theme: icon.theme, source: icon.source, stamp: icon.stamp };
+      const button = el('button', 'theme-icon-choice');
+      const img = el('img');
+      img.alt = ''; img.loading = 'lazy';
+      img.src = `${base}theme-icon?${new URLSearchParams(identity)}`;
+      button.append(img, el('span', '', icon.name), el('span', 'sub', icon.themeName));
+      button.onclick = async () => {
+        if (saving) return;
+        saving = true; grid.setAttribute('aria-busy', 'true');
+        try {
+          const next = await api('api/theme-icon/pick', { ...identity, app: a.key, targetTheme });
+          if (!next.saved) throw new Error('not saved');
+          take(next); toast(t('toast_icon_picked'));
+          if (body.contains(grid)) closeSheet();
+        } catch (err) {
+          toast(t('toast_set_fail'));
+        } finally {
+          saving = false; grid.setAttribute('aria-busy', 'false');
+        }
+      };
+      const keywords = [icon.name, icon.source, icon.themeName, icon.theme].join(' ').toLocaleLowerCase(LANG);
+      return { button, keywords };
+    });
+    function filter() {
+      const words = search.value.trim().toLocaleLowerCase(LANG).split(/\s+/);
+      const matches = entries.filter(entry => words.every(word => entry.keywords.includes(word)));
+      grid.replaceChildren(...matches.map(entry => entry.button));
+      message.hidden = matches.length > 0;
+      message.textContent = matches.length ? '' : t('theme_icon_empty');
+    }
+    grid.setAttribute('aria-busy', 'false');
+    search.disabled = entries.length === 0;
+    search.addEventListener('input', filter);
+    filter();
+  } catch (err) {
+    grid.setAttribute('aria-busy', 'false');
+    message.textContent = t('theme_icon_load_fail');
+  }
 }
 /* The device on an input: its mark and colours on the tile, its name on the caption (as on the TV). */
 function deviceChooser(a, e) {

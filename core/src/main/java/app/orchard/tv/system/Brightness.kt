@@ -39,12 +39,20 @@ import androidx.core.content.ContextCompat
  */
 object Brightness {
     private const val XIAOMI_BACKLIGHT = "picture_backlight"
+    private const val XIAOMI_NEW_BACKLIGHT = "xiaomi_picture_backlight"
 
     // MiTV-MFTP0 keeps picture_backlight without following it: DeviceProfile.ignoresPictureBacklight.
 
-    private fun usesXiaomiBacklight(context: Context) =
-        !DeviceProfile.current(context).ignoresPictureBacklight &&
-            Settings.Global.getString(context.contentResolver, XIAOMI_BACKLIGHT) != null
+    private fun xiaomiBacklightKey(context: Context): String? {
+        val resolver = context.contentResolver
+        // Redmi G Pro 27U: the firmware slider and panel follow the newer Global key (#1752).
+        return when {
+            Settings.Global.getString(resolver, XIAOMI_NEW_BACKLIGHT) != null -> XIAOMI_NEW_BACKLIGHT
+            !DeviceProfile.current(context).ignoresPictureBacklight &&
+                Settings.Global.getString(resolver, XIAOMI_BACKLIGHT) != null -> XIAOMI_BACKLIGHT
+            else -> null
+        }
+    }
 
     private fun isTcl(context: Context) =
         runCatching { context.packageManager.getPackageInfo("com.tcl.settings", 0) }.isSuccess
@@ -106,10 +114,11 @@ object Brightness {
         }
         val r = context.contentResolver
         if (isTcl(context)) TclPicture.backlight(context)?.let { return it / 100f }
+        val xiaomiKey = xiaomiBacklightKey(context)
         return when {
-            usesXiaomiBacklight(context) -> {
+            xiaomiKey != null -> {
                 if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_SECURE_SETTINGS) != PackageManager.PERMISSION_GRANTED) return null
-                Settings.Global.getInt(r, XIAOMI_BACKLIGHT, 50) / 100f
+                Settings.Global.getInt(r, xiaomiKey, 50) / 100f
             }
             // The MiTV middleware is driven over its own binder and Aerial keeps the level in its own
             // preferences, so this path does not need WRITE_SETTINGS.
@@ -181,9 +190,10 @@ object Brightness {
         val next = stepPercent(percent, direction)
         val r = context.contentResolver
         val changhong = ChanghongPicture.usable(context)
+        val xiaomiKey = xiaomiBacklightKey(context)
         // The same order as level(): TCL's SDK and picture_backlight come first, so a Xiaomi that
         // has both never has its panel probed or moved this way.
-        if (!changhong && !isTcl(context) && !usesXiaomiBacklight(context) && MitvPanel.usable(context)) {
+        if (!changhong && !isTcl(context) && xiaomiKey == null && MitvPanel.usable(context)) {
             runCatching {
                 // Start the relative step from the level Aerial set last: the middleware's getter is
                 // animated, so a panel reading taken mid-step is only the seed of the first step
@@ -203,8 +213,14 @@ object Brightness {
                 ChanghongPicture.setBacklight(context, next)
             } else if (isTcl(context)) {
                 TclPicture.setBacklight(context, next)
-            } else if (usesXiaomiBacklight(context)) {
-                Settings.Global.putInt(r, XIAOMI_BACKLIGHT, next)
+            } else if (xiaomiKey != null) {
+                Settings.Global.putInt(r, xiaomiKey, next)
+                // Xiaomi MFTR0 keeps both keys; retain the legacy value on those builds.
+                if (xiaomiKey == XIAOMI_NEW_BACKLIGHT && !DeviceProfile.current(context).ignoresPictureBacklight &&
+                    Settings.Global.getString(r, XIAOMI_BACKLIGHT) != null
+                ) {
+                    Settings.Global.putInt(r, XIAOMI_BACKLIGHT, next)
+                }
             } else {
                 // Reached only after the original native and picture-settings paths were ruled out.
                 val tianci = TianciBacklight.backlight(context)

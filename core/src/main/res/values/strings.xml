@@ -403,4 +403,15 @@
         <item>Grayscale</item>
         <item>Screen edges</item>
     </string-array>
+    <string name="a11y_delete">Delete</string>
+    <string name="weather_hours_ago">%d h ago</string>
+    <string name="a11y_increase">Increase</string>
+    <string name="a11y_decrease">Decrease</string>
+    <string name="st_sounds_off_hint">Turn off NookScreen navigation sounds.</string>
+    <string name="st_effects_full_hint">Show the full glass and tile focus effects.</string>
+    <string name="st_effects_auto_full_hint">This TV uses full effects in Auto.</string>
+    <string name="ss_aerial_hint">Play aerial films.</string>
+    <string name="ss_photos_hint">Show your photos as a slideshow.</string>
+    <string name="ss_clock_hint">Show the time on a dark screen.</string>
+    <string name="ss_preview_hint">Preview the selected screensaver.</string>
 </resources>

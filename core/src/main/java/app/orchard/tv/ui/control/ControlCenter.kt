@@ -81,11 +81,16 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.orchard.tv.CcPage
+import app.orchard.tv.CcFocus
 import app.orchard.tv.BuildConfig
 import app.orchard.tv.HomeViewModel
 import app.orchard.tv.Overlay
@@ -139,18 +144,19 @@ fun ControlCenter(
     warm: Boolean = false,
     /** Home is on its top row: no tiles under the panel, only the wallpaper (see liquidGlass). */
     onShelf: Boolean = false,
+    focus: CcFocus? = null,
 ) {
     val reduced = LocalReducedMotion.current
     BackHandler(enabled = visible) {
         when (page) {
             CcPage.Main -> onClose()
             CcPage.Inputs -> vm.overlay = Overlay.ControlCenter(CcPage.Main)
-            CcPage.InputSettings -> vm.overlay = Overlay.ControlCenter(CcPage.Inputs)
+            CcPage.InputSettings -> vm.overlay = Overlay.ControlCenter(CcPage.Inputs, CcFocus.InputSettings)
             CcPage.Update, CcPage.Setup, CcPage.Scenes, CcPage.SelfCheck -> vm.overlay = Overlay.ControlCenter(CcPage.Main)
             CcPage.NetworkCheck -> vm.overlay = Overlay.ControlCenter(CcPage.SelfCheck)
             CcPage.SceneEdit -> vm.overlay = Overlay.ControlCenter(CcPage.Scenes)
             CcPage.SceneSources -> vm.overlay = Overlay.ControlCenter(CcPage.SceneEdit)
-            CcPage.Themes -> vm.overlay = Overlay.ControlCenter(vm.themeReturnPage)
+            CcPage.Themes -> vm.closeThemes()
             CcPage.ThemeManage -> vm.overlay = Overlay.ControlCenter(CcPage.Themes)
             CcPage.Plugins -> vm.overlay = Overlay.ControlCenter(CcPage.Main)
         }
@@ -188,7 +194,8 @@ fun ControlCenter(
         // against about 26 ms on the second opening (Xiaomi MiTV-MFTR0, release build). Drawn once
         // at 1% while Home is idle, without focus, the first opening is like the second.
         if (warm && !visible) {
-            Column(Modifier.graphicsLayer { alpha = 0.01f }.width(300.dp).liquidGlass(24.dp).padding(16.dp)) {
+            Column(Modifier.clearAndSetSemantics {}.graphicsLayer { alpha = 0.01f }
+                .width(300.dp).liquidGlass(24.dp).padding(16.dp)) {
                 MainPage(vm, now, takeFocus = false, poll = false, onOpen = onOpen)
             }
         }
@@ -226,12 +233,13 @@ fun ControlCenter(
                             CcPage.Main -> if (Restricted.active) {
                                 KidsPage(vm, now, visible)
                             } else {
-                                MainPage(vm, now, takeFocus = visible, poll = visible, onOpen = onOpen)
+                                MainPage(vm, now, takeFocus = visible && p == page, poll = visible, onOpen = onOpen,
+                                    focusThemes = focus == CcFocus.Themes)
                             }
-                            CcPage.Inputs -> InputsPage(vm, visible, onOpen)
-                            CcPage.InputSettings -> InputSettingsPage(vm, visible)
+                            CcPage.Inputs -> InputsPage(vm, visible && p == page, focus == CcFocus.InputSettings, onOpen)
+                            CcPage.InputSettings -> InputSettingsPage(vm, visible && p == page)
                             CcPage.Scenes, CcPage.SceneEdit, CcPage.SceneSources -> ScenePage(vm, p, visible && p == page)
-                            CcPage.Themes, CcPage.ThemeManage -> ThemePage(vm, p, visible && p == page)
+                            CcPage.Themes, CcPage.ThemeManage -> ThemePage(vm, p, visible && p == page, focus == CcFocus.Personalize)
                             CcPage.Plugins -> PluginPage(vm, visible && p == page)
                             CcPage.Update -> UpdatePage(vm, visible)
                             CcPage.Setup -> SetupPage(vm, visible, onOpen)
@@ -294,6 +302,7 @@ private fun MainPage(
     /** The row polls the picture service, so only the copy that is on screen may do it. */
     poll: Boolean,
     onOpen: (android.content.Intent) -> Unit,
+    focusThemes: Boolean = false,
 ) {
     val context = LocalContext.current
     // The laser level belongs to the laser sets only (HisenseLaserPanel); every other TV keeps
@@ -305,14 +314,16 @@ private fun MainPage(
     val first = remember { FocusRequester() }
     val networkFocus = remember { FocusRequester() }
     val settingsFocus = remember { FocusRequester() }
+    val themesFocus = remember { FocusRequester() }
     // The buttons share one row above a panel-wide slider, so focus searching up from it has three
     // equally near choices and takes the middle one, Network, whichever button Down came from
     // (75A7D). Remember that button and send Up back to it.
     var cameFrom by remember { mutableStateOf(first) }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(takeFocus, focusThemes) {
         if (!takeFocus) return@LaunchedEffect
         withFrameNanos { }
-        runCatching { first.requestFocus() }
+        val restored = focusThemes && vm.loaded && runCatching { themesFocus.requestFocus() }.getOrDefault(false)
+        if (!restored) runCatching { first.requestFocus() }
     }
 
     Column(Modifier.verticalScroll(rememberScrollState())) {
@@ -397,6 +408,7 @@ private fun MainPage(
                 Glyph.Photo,
                 stringResource(R.string.theme_title),
                 onClick = { vm.openThemes(CcPage.Main) },
+                focusRequester = themesFocus,
                 trailing = "›",
             )
             MenuRow(
@@ -698,6 +710,7 @@ private fun RoundButton(
 @Composable
 private fun SliderRow(
     glyph: Glyph,
+    label: String,
     level: Float,
     value: String,
     steps: Int,
@@ -714,10 +727,18 @@ private fun SliderRow(
         doStep(by)
     }
     val stepCount by rememberUpdatedState(steps.coerceAtLeast(1))
+    val increase = stringResource(R.string.a11y_increase)
+    val decrease = stringResource(R.string.a11y_decrease)
     Pressable(
         onClick = onClick,
+        label = label,
         focusedScale = 1.03f,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().semantics {
+            customActions = listOf(
+                CustomAccessibilityAction(increase) { step(1); true },
+                CustomAccessibilityAction(decrease) { step(-1); true },
+            )
+        },
         onKey = { e ->
             val code = e.nativeKeyEvent.keyCode
             if (code != NativeKeyEvent.KEYCODE_DPAD_LEFT && code != NativeKeyEvent.KEYCODE_DPAD_RIGHT) return@Pressable false
@@ -766,6 +787,7 @@ private fun SliderRow(
 private fun VolumeRow(vm: HomeViewModel, returnTo: FocusRequester) {
     val volume = vm.volume
     SliderRow(
+        label = stringResource(R.string.cc_volume),
         glyph = if (volume.muted) Glyph.SpeakerMuted else Glyph.Speaker,
         level = if (volume.muted) 0f else volume.fraction,
         value = if (volume.muted) stringResource(R.string.cc_muted) else volume.level.toString(),
@@ -820,6 +842,7 @@ private fun BrightnessRow(vm: HomeViewModel, laser: Boolean) {
         }, trailing = stringResource(R.string.cc_brightness_in_settings) + " ›")
     } else {
         SliderRow(
+            label = stringResource(R.string.cc_brightness),
             glyph = Glyph.Sun,
             level = level,
             // A laser set's level is 11 notches of its own, not a percentage of anything: show the
@@ -844,15 +867,19 @@ private fun BrightnessRow(vm: HomeViewModel, laser: Boolean) {
 }
 
 @Composable
-private fun InputsPage(vm: HomeViewModel, takeFocus: Boolean, onOpen: (android.content.Intent) -> Unit) {
+private fun InputsPage(vm: HomeViewModel, takeFocus: Boolean, focusSettings: Boolean, onOpen: (android.content.Intent) -> Unit) {
     val first = remember { FocusRequester() }
-    LaunchedEffect(Unit) {
+    val settings = remember { FocusRequester() }
+    LaunchedEffect(takeFocus, focusSettings) {
         if (!takeFocus) return@LaunchedEffect
         withFrameNanos { }
-        runCatching { first.requestFocus() }
+        val target = if (vm.sources.isNotEmpty() && (focusSettings || vm.shownSources.isEmpty())) settings else first
+        runCatching { target.requestFocus() }
     }
     Column(Modifier.heightIn(max = 470.dp).verticalScroll(rememberScrollState())) {
-        MenuRow(Glyph.ChevronLeft, stringResource(R.string.cc_inputs), onClick = { vm.overlay = Overlay.ControlCenter(CcPage.Main) })
+        MenuRow(Glyph.ChevronLeft, stringResource(R.string.cc_inputs),
+            onClick = { vm.overlay = Overlay.ControlCenter(CcPage.Main) },
+            focusRequester = first.takeIf { vm.sources.isEmpty() })
         Spacer(Modifier.height(8.dp))
         val shown = vm.shownSources
         if (shown.isEmpty()) {
@@ -882,8 +909,7 @@ private fun InputsPage(vm: HomeViewModel, takeFocus: Boolean, onOpen: (android.c
             MenuRow(
                 Glyph.Gear, stringResource(R.string.cc_inputs_settings),
                 onClick = { vm.overlay = Overlay.ControlCenter(CcPage.InputSettings) },
-                // With every input taken out of the list, the way back in is the first row.
-                focusRequester = if (shown.isEmpty()) first else null,
+                focusRequester = settings,
             )
         }
     }
@@ -896,14 +922,16 @@ private fun InputsPage(vm: HomeViewModel, takeFocus: Boolean, onOpen: (android.c
 @Composable
 private fun InputSettingsPage(vm: HomeViewModel, takeFocus: Boolean) {
     val first = remember { FocusRequester() }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(takeFocus) {
         if (!takeFocus) return@LaunchedEffect
         withFrameNanos { }
         runCatching { first.requestFocus() }
     }
     fun name(source: app.orchard.tv.system.TvSource) = source.deviceName?.let { "${source.label} · $it" } ?: source.label
     Column(Modifier.heightIn(max = 470.dp).verticalScroll(rememberScrollState())) {
-        MenuRow(Glyph.ChevronLeft, stringResource(R.string.cc_inputs_settings), onClick = { vm.overlay = Overlay.ControlCenter(CcPage.Inputs) })
+        MenuRow(Glyph.ChevronLeft, stringResource(R.string.cc_inputs_settings), onClick = {
+            vm.overlay = Overlay.ControlCenter(CcPage.Inputs, CcFocus.InputSettings)
+        })
 
         val shown = vm.shownSources
         // Which inputs the list has: firmwares list ports the TV does not have (issue #279).

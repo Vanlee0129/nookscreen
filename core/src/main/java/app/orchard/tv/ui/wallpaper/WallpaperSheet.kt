@@ -55,6 +55,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
@@ -66,6 +67,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -128,6 +130,7 @@ fun WallpaperSheet(
     onSettled: (Boolean) -> Unit = {},
     /** Draw the closed sheet once, nearly clear, so that its first opening is not its first draw (HomeScreen). */
     warm: Boolean = false,
+    focusHiddenApps: Boolean = false,
 ) {
     val context = LocalContext.current
     var phoneUrl by remember { mutableStateOf<String?>(null) }
@@ -175,6 +178,12 @@ fun WallpaperSheet(
         ) {
             val scroll = rememberScrollState()
             val scope = rememberCoroutineScope()
+            val hiddenApps = remember { FocusRequester() }
+            LaunchedEffect(takeFocus, visible, focusHiddenApps) {
+                if (!takeFocus || !visible || !focusHiddenApps) return@LaunchedEffect
+                withFrameNanos { }
+                runCatching { hiddenApps.requestFocus() }
+            }
             // How Home looks, in the order you see it: the picture behind everything, how Home
             // is laid out over it, what replaces it when idle, then the weather and the PIN.
             // Settings sit in tvOS-style grouped rows; each group's note follows the focused row.
@@ -182,7 +191,7 @@ fun WallpaperSheet(
                 BasicText(stringResource(R.string.wp_title), style = Type.LargeTitle)
                 Spacer(Modifier.height(16.dp))
                 SectionTitle(R.string.wp_wallpaper)
-                WallpaperRows(takeFocus)
+                WallpaperRows(takeFocus && visible && !focusHiddenApps)
                 // Only for the owner's videos: whether keys stop them. The aerial films always move.
                 if (Wallpapers.isVideo()) Group { note ->
                     Choices(
@@ -241,7 +250,8 @@ fun WallpaperSheet(
                         ActionChip(
                             if (hiddenCount == 0) stringResource(R.string.st_hidden_none) else stringResource(R.string.st_hidden_count, hiddenCount),
                             Glyph.ChevronRight,
-                            onHiddenApps,
+                            focusRequester = hiddenApps,
+                            onClick = onHiddenApps,
                         )
                     }
                     Choices(
@@ -275,46 +285,50 @@ fun WallpaperSheet(
                 }
                 Spacer(Modifier.height(10.dp))
                 Group { note ->
+                    val highContrast = stringResource(R.string.st_focus_high_hint)
+                    val standard = stringResource(R.string.st_focus_standard_hint)
+                    val tvSounds = stringResource(R.string.st_sounds_tv_hint)
+                    val nookSounds = stringResource(R.string.st_sounds_hint)
+                    val noSounds = stringResource(R.string.st_sounds_off_hint)
+                    val fullEffects = stringResource(R.string.st_effects_full_hint)
+                    val liteEffects = stringResource(R.string.st_effects_hint)
+                    val autoEffects = stringResource(if (AerialSettings.lowEnd) R.string.st_effects_auto_lite_hint else R.string.st_effects_auto_full_hint)
                     Choices(
-                        R.string.st_focus_style,
-                        stringResource(if (AerialSettings.focusStyle == FocusStyle.HighContrast) R.string.st_focus_high_hint else R.string.st_focus_standard_hint),
-                        note,
+                        R.string.st_focus_style, null, note,
                         listOf(FocusStyle.HighContrast to R.string.st_focus_high, FocusStyle.Standard to R.string.st_focus_standard),
                         AerialSettings.focusStyle, AerialSettings::chooseFocusStyle, first = true,
+                        hintOf = { if (it == FocusStyle.HighContrast) highContrast else standard },
                     )
                     Choices(
-                        R.string.st_sounds,
-                        stringResource(if (AerialSettings.uiSounds == UiSounds.Tv) R.string.st_sounds_tv_hint else R.string.st_sounds_hint),
-                        note,
+                        R.string.st_sounds, null, note,
                         listOf(UiSounds.Tv to R.string.st_sounds_tv, UiSounds.Aerial to R.string.st_sounds_aerial, UiSounds.Off to R.string.st_off),
                         AerialSettings.uiSounds, { AerialSettings.chooseUiSounds(it); Sounds.prepare() },
+                        hintOf = { when (it) { UiSounds.Tv -> tvSounds; UiSounds.Aerial -> nookSounds; UiSounds.Off -> noSounds } },
                     )
                     Choices(
-                        R.string.st_effects,
-                        stringResource(
-                            if (AerialSettings.effects == Effects.Auto && AerialSettings.lowEnd) R.string.st_effects_auto_lite_hint
-                            else R.string.st_effects_hint,
-                        ),
-                        note,
+                        R.string.st_effects, null, note,
                         listOf(Effects.Auto to R.string.st_effects_auto, Effects.Full to R.string.st_effects_full, Effects.Lite to R.string.st_effects_lite),
                         AerialSettings.effects, AerialSettings::chooseEffects,
+                        hintOf = { when (it) { Effects.Auto -> autoEffects; Effects.Full -> fullEffects; Effects.Lite -> liteEffects } },
                     )
                 }
 
                 Spacer(Modifier.height(22.dp))
                 SectionTitle(R.string.wp_screensaver)
                 Group { note ->
+                    var focusedMode by remember { mutableStateOf<ScreensaverMode?>(null) }
                     SettingRow(
                         R.string.ss_kind,
-                        when {
-                            Wallpapers.screensaver == ScreensaverMode.Videos -> stringResource(R.string.ss_videos_hint)
-                            Wallpapers.screensaver == ScreensaverMode.System -> stringResource(R.string.ss_system_hint)
-                            Wallpapers.screensaverFollows -> stringResource(R.string.ss_follow_hint)
-                            AerialSettings.backStartsScreensaver -> stringResource(R.string.ss_back_hint)
-                            else -> null
-                        },
+                        stringResource(when (focusedMode) {
+                            ScreensaverMode.Aerial -> R.string.ss_aerial_hint
+                            ScreensaverMode.Photos -> R.string.ss_photos_hint
+                            ScreensaverMode.Clock -> R.string.ss_clock_hint
+                            ScreensaverMode.Videos -> R.string.ss_videos_hint
+                            ScreensaverMode.System -> R.string.ss_system_hint
+                            null -> if (Wallpapers.screensaverFollows) R.string.ss_follow_hint else R.string.ss_preview_hint
+                        }),
                         note, first = true,
-                    ) { ScreensaverChoice(onStartScreensaver) }
+                    ) { ScreensaverChoice(onStartScreensaver) { focusedMode = it } }
                     // Only the qualities this TV can play; a 1080p-only TV has nothing to choose.
                     val qualities = remember { AerialFormats.supported(context) }
                     if (qualities.size > 1) {
@@ -396,7 +410,7 @@ fun WallpaperSheet(
                                     else -> stringResource(R.string.kids_kind_elders)
                                 },
                                 Glyph.ChevronRight,
-                                onKids,
+                                onClick = onKids,
                             )
                         }
                     }
@@ -413,7 +427,9 @@ fun WallpaperSheet(
         // for the first time: frames of 250 and 316 ms, 1.16 s for the slide-in, against about
         // 140 ms at worst on later openings (Xiaomi MiTV-MFTR0). Drawn once at 1% while Home is
         // idle, without focus (HomeScreen, as Control Center), the first opening is like the next.
-        if (warm && !visible) Box(Modifier.graphicsLayer { alpha = 0.01f }) { sheet(false) }
+        if (warm && !visible) {
+            Box(Modifier.clearAndSetSemantics {}.graphicsLayer { alpha = 0.01f }) { sheet(false) }
+        }
         AnimatedVisibility(
             visibleState = shown,
             enter = fadeIn(tween(200, easing = Motion.EaseOut)) + slideInVertically(tween(380, easing = Motion.Drawer)) { it / 3 },
@@ -435,7 +451,7 @@ private fun WallpaperRows(takeFocus: Boolean) {
     val items = Wallpapers.items
     val selected = Wallpapers.selectedId
     val first = remember { FocusRequester() }
-    LaunchedEffect(Unit) {
+    LaunchedEffect(takeFocus) {
         if (!takeFocus) return@LaunchedEffect
         withFrameNanos { }
         runCatching { first.requestFocus() }
@@ -615,13 +631,15 @@ private fun Group(note: String? = null, rows: @Composable ColumnScope.(note: (St
 /** One row: the setting's name on the left, its control on the right, a hairline above all but the first. */
 @Composable
 private fun SettingRow(label: Int, hint: String?, note: (String?) -> Unit, first: Boolean = false, control: @Composable () -> Unit) {
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(focused, hint) { if (focused) note(hint) }
     if (!first) Box(Modifier.padding(start = 18.dp).fillMaxWidth().height(1.dp).background(Palette.Hairline))
     Row(
         Modifier
             .fillMaxWidth()
             .height(58.dp)
             .padding(start = 18.dp, end = 10.dp)
-            .onFocusChanged { if (it.hasFocus) note(hint) },
+            .onFocusChanged { focused = it.hasFocus },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicText(stringResource(label), style = Type.Body, modifier = Modifier.weight(1f), maxLines = 1)
@@ -639,11 +657,18 @@ private fun <T> Choices(
     current: T,
     choose: (T) -> Unit,
     first: Boolean = false,
+    hintOf: ((T) -> String?)? = null,
 ) {
-    SettingRow(label, hint, note, first) {
+    var focusedOption by remember { mutableStateOf<T?>(null) }
+    SettingRow(label, hintOf?.invoke(focusedOption ?: current) ?: hint, note, first) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            options.forEach { (value, text) ->
-                Chip(if (text is Int) stringResource(text) else text.toString(), on = current == value) { choose(value) }
+            options.forEachIndexed { index, (value, text) ->
+                Chip(
+                    if (text is Int) stringResource(text) else text.toString(),
+                    on = current == value,
+                    onFocused = if (hintOf == null) null else ({ focusedOption = value }),
+                    modifier = choiceEdges(index == 0, index == options.lastIndex),
+                ) { choose(value) }
             }
         }
     }
@@ -654,7 +679,8 @@ private fun <T> Choices(
 private fun PinChoice(onPin: (on: Boolean) -> Unit, onFocused: () -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         listOf(false to R.string.st_pin_off, true to R.string.st_pin_on).forEach { (on, label) ->
-            Chip(stringResource(label), on = AerialSettings.pinSet == on, onFocused = onFocused) {
+            Chip(stringResource(label), on = AerialSettings.pinSet == on, onFocused = onFocused,
+                modifier = choiceEdges(first = !on, last = on)) {
                 if (AerialSettings.pinSet != on) onPin(on)
             }
         }
@@ -664,7 +690,7 @@ private fun PinChoice(onPin: (on: Boolean) -> Unit, onFocused: () -> Unit) {
 /** Where the weather is for and what it is now. The city is set on the phone page. */
 @Composable
 private fun WeatherValue() {
-    val w = Weather.now
+    val w = Weather.shown()
     val place = Weather.place
     val kind = w?.let {
         stringResource(
@@ -688,8 +714,8 @@ private fun WeatherValue() {
 
 /** A pill to pick one of a few options: a check on the chosen one, white when focused. */
 @Composable
-private fun Chip(label: String, on: Boolean, onFocused: (() -> Unit)? = null, onClick: () -> Unit) {
-    Pressable(onClick = onClick, focusedScale = 1.06f) { state ->
+private fun Chip(label: String, on: Boolean, onFocused: (() -> Unit)? = null, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Pressable(onClick = onClick, modifier = modifier, focusedScale = 1.06f) { state ->
         if (onFocused != null) LaunchedEffect(state.focused) { if (state.focused) onFocused() }
         val bg by animateColorAsState(
             when {
@@ -713,8 +739,8 @@ private fun Chip(label: String, on: Boolean, onFocused: (() -> Unit)? = null, on
 
 /** A pill that does something rather than choosing a value: white when focused, a glyph after its label. */
 @Composable
-private fun ActionChip(label: String, glyph: Glyph, onClick: () -> Unit) {
-    Pressable(onClick = onClick, focusedScale = 1.06f) { state ->
+private fun ActionChip(label: String, glyph: Glyph, focusRequester: FocusRequester? = null, onClick: () -> Unit) {
+    Pressable(onClick = onClick, focusRequester = focusRequester, focusedScale = 1.06f) { state ->
         val bg by animateColorAsState(if (state.focused) Palette.Focus else Palette.FillStrong, tween(140, easing = Motion.EaseOut), label = "action-bg")
         val fg = if (state.focused) Palette.OnFocus else Palette.Label
         Row(
@@ -729,7 +755,7 @@ private fun ActionChip(label: String, glyph: Glyph, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ScreensaverChoice(onStart: () -> Unit) {
+private fun ScreensaverChoice(onStart: () -> Unit, onFocusMode: (ScreensaverMode?) -> Unit) {
     // The choice first, then the action that tries it.
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         listOf(
@@ -738,11 +764,15 @@ private fun ScreensaverChoice(onStart: () -> Unit) {
             ScreensaverMode.Clock to R.string.ss_clock,
             ScreensaverMode.Videos to R.string.ss_videos,
             ScreensaverMode.System to R.string.ss_system,
-        ).forEach { (mode, label) ->
-            Chip(stringResource(label), on = Wallpapers.screensaver == mode) { Wallpapers.chooseScreensaver(mode) }
+        ).forEachIndexed { index, (mode, label) ->
+            Chip(stringResource(label), on = Wallpapers.screensaver == mode,
+                onFocused = { onFocusMode(mode) }, modifier = choiceEdges(first = index == 0, last = false)) {
+                Wallpapers.chooseScreensaver(mode)
+            }
         }
         Spacer(Modifier.width(6.dp))
-        Pressable(onClick = onStart, focusedScale = 1.06f) { state ->
+        Pressable(onClick = onStart, modifier = choiceEdges(first = false, last = true), focusedScale = 1.06f) { state ->
+            LaunchedEffect(state.focused) { if (state.focused) onFocusMode(null) }
             val bg by animateColorAsState(if (state.focused) Palette.Focus else Palette.FillStrong, tween(140, easing = Motion.EaseOut), label = "ss-start")
             val fg = if (state.focused) Palette.OnFocus else Palette.Label
             Row(
@@ -755,6 +785,11 @@ private fun ScreensaverChoice(onStart: () -> Unit) {
             }
         }
     }
+}
+
+private fun choiceEdges(first: Boolean, last: Boolean): Modifier = Modifier.focusProperties {
+    if (first) left = FocusRequester.Cancel
+    if (last) right = FocusRequester.Cancel
 }
 
 @Composable

@@ -52,7 +52,7 @@ private enum class Action { Save, Manage, Rename, Update, Delete }
 private data class Prompt(val action: Action, val theme: SavedTheme? = null)
 
 @Composable
-internal fun ThemePage(vm: HomeViewModel, page: CcPage, takeFocus: Boolean) {
+internal fun ThemePage(vm: HomeViewModel, page: CcPage, takeFocus: Boolean, focusPersonalize: Boolean) {
     val context = LocalContext.current
     val themes = vm.homeThemes
     val plugins by vm.themePlugins.installed.collectAsState()
@@ -61,16 +61,18 @@ internal fun ThemePage(vm: HomeViewModel, page: CcPage, takeFocus: Boolean) {
     val scope = rememberCoroutineScope()
     var downloading by remember { mutableStateOf<ThemeRelease?>(null) }
     val first = remember { FocusRequester() }
+    val personalize = remember { FocusRequester() }
     var prompt by remember { mutableStateOf<Prompt?>(null) }
     fun show(target: CcPage) { vm.overlay = Overlay.ControlCenter(target) }
 
-    LaunchedEffect(takeFocus, Restricted.active) {
+    LaunchedEffect(takeFocus, Restricted.active, focusPersonalize) {
         if (!takeFocus) return@LaunchedEffect
         if (Restricted.active) show(CcPage.Main)
         else {
             if (page == CcPage.Themes) ThemeReleases.refresh(context)
             withFrameNanos { }
-            runCatching { first.requestFocus() }
+            val target = if (page == CcPage.Themes && focusPersonalize) personalize else first
+            runCatching { target.requestFocus() }
         }
     }
 
@@ -140,7 +142,7 @@ internal fun ThemePage(vm: HomeViewModel, page: CcPage, takeFocus: Boolean) {
     Column(Modifier.heightIn(max = 470.dp).verticalScroll(rememberScrollState())) {
         when (page) {
             CcPage.Themes -> {
-                MenuRow(Glyph.ChevronLeft, stringResource(R.string.theme_title), { show(vm.themeReturnPage) })
+                MenuRow(Glyph.ChevronLeft, stringResource(R.string.theme_title), vm::closeThemes)
                 ThemeRow(
                     current.pack == ThemePack.Classic && current.customId == null,
                     stringResource(R.string.theme_classic), ThemePack.Classic.wallpaper, first,
@@ -204,7 +206,8 @@ internal fun ThemePage(vm: HomeViewModel, page: CcPage, takeFocus: Boolean) {
                         }
                     }
                 }
-                MenuRow(Glyph.Photo, stringResource(R.string.scene_wallpaper), { vm.overlay = Overlay.Wallpaper }, trailing = "›")
+                MenuRow(Glyph.Photo, stringResource(R.string.scene_wallpaper), { vm.overlay = Overlay.Wallpaper() },
+                    trailing = "›", focusRequester = personalize)
                 if (themes.selection.customId != null) {
                     BasicText(stringResource(R.string.theme_upload_hint), style = Type.Caption, modifier = Modifier.padding(horizontal = 14.dp))
                 }

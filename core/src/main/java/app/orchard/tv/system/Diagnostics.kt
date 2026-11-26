@@ -137,6 +137,7 @@ object Diagnostics {
         appendLine("**Brightness**")
         appendLine("```")
         appendLine("NookScreen can set it: ${Brightness.level(context) != null}")
+        appendLine("  global xiaomi_picture_backlight=${global(context, "xiaomi_picture_backlight")}")
         appendLine("  global picture_backlight=${global(context, "picture_backlight")}  system screen_brightness=${system(context, Settings.System.SCREEN_BRIGHTNESS)} mode=${system(context, Settings.System.SCREEN_BRIGHTNESS_MODE)}")
         appendLine("```")
 

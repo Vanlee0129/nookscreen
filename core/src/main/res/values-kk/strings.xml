@@ -395,4 +395,15 @@
         <item>Сұр реңктер</item>
         <item>Экран шеттері</item>
     </string-array>
+    <string name="a11y_delete">Жою</string>
+    <string name="weather_hours_ago">%d сағ бұрын</string>
+    <string name="a11y_increase">Арттыру</string>
+    <string name="a11y_decrease">Азайту</string>
+    <string name="st_sounds_off_hint">NookScreen шарлау дыбыстарын өшіреді.</string>
+    <string name="st_effects_full_hint">Шыны мен таңдалған тақташаның барлық әсерін қосады.</string>
+    <string name="st_effects_auto_full_hint">Бұл теледидарда авто режим толық әсерлерді қолданады.</string>
+    <string name="ss_aerial_hint">Әуеден түсірілген бейнелерді ойнатады.</string>
+    <string name="ss_photos_hint">Фотосуреттеріңізді кезекпен көрсетеді.</string>
+    <string name="ss_clock_hint">Қараңғы фонда сағатты көрсетеді.</string>
+    <string name="ss_preview_hint">Таңдалған экран сақтағышын алдын ала көру.</string>
 </resources>

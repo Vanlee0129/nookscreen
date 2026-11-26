@@ -395,4 +395,15 @@
         <item>Відтінки сірого</item>
         <item>Межі екрана</item>
     </string-array>
+    <string name="a11y_delete">Видалити</string>
+    <string name="weather_hours_ago">%d год тому</string>
+    <string name="a11y_increase">Збільшити</string>
+    <string name="a11y_decrease">Зменшити</string>
+    <string name="st_sounds_off_hint">Вимикає звуки навігації NookScreen.</string>
+    <string name="st_effects_full_hint">Вмикає всі ефекти скла та підсвічування плиток.</string>
+    <string name="st_effects_auto_full_hint">На цьому телевізорі авторежим вмикає всі ефекти.</string>
+    <string name="ss_aerial_hint">Відтворює відео з висоти.</string>
+    <string name="ss_photos_hint">Показує ваші фотографії по черзі.</string>
+    <string name="ss_clock_hint">Показує годинник на темному тлі.</string>
+    <string name="ss_preview_hint">Перегляд вибраної заставки.</string>
 </resources>

@@ -124,6 +124,7 @@ fun VideoWallpaper(
     behindApp: Boolean = false,
 ) {
     val context = LocalContext.current
+    val inAppOnly = remember(context) { softwareWallpaperFramesOnly(context) }
     var player by remember { mutableStateOf<ExoPlayer?>(null) }
     var surface by remember { mutableStateOf<SurfaceView?>(null) }
     var showing by remember { mutableStateOf(false) }
@@ -248,7 +249,7 @@ fun VideoWallpaper(
         val w = surface?.width?.takeIf { it > 0 } ?: Wallpapers.screenW
         val h = surface?.height?.takeIf { it > 0 } ?: Wallpapers.screenH
         // The copy is the whole film squeezed to the view's size: only where that is the screen's shape.
-        if (held && screenShaped(shape?.shape ?: 0f)) surface?.let { copyFrame(it) }?.let { return it to at }
+        if (held && !inAppOnly && screenShaped(shape?.shape ?: 0f)) surface?.let { copyFrame(it) }?.let { return it to at }
         keyFrameOfVideo(context, film, at, w, h)?.let { return it }
         return withContext(Dispatchers.IO) {
             (if (held || fileFramesJam(context)) null else fileFrame(context, film, at, w, h))?.let { it to at }
@@ -305,7 +306,7 @@ fun VideoWallpaper(
     // owner's video may be 4K HEVC, and a second decoder beside the player's may not be there.
     LaunchedEffect(play, showing) {
         if (!play || !showing) return@LaunchedEffect
-        sampleGlass({ player }, canTake = { copyGlassPossible }) { surface?.let { copyGlass(it) } }
+        sampleGlass({ player }, canTake = { !inAppOnly && copyGlassPossible }) { surface?.let { copyGlass(it) } }
     }
 
     // Let go as Aerial stops, not at the next frame, which does not come then (rememberStops).

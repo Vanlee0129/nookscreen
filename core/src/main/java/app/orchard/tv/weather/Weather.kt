@@ -26,7 +26,10 @@ import kotlin.math.roundToInt
 enum class WeatherKind { Clear, PartlyCloudy, Cloudy, Fog, Rain, Snow, Thunder }
 
 /** [high] and [low] are today's, shown under the large clock; null in a reading saved by an older version. */
-data class WeatherNow(val celsius: Int, val kind: WeatherKind, val day: Boolean, val high: Int? = null, val low: Int? = null)
+data class WeatherNow(
+    val celsius: Int, val kind: WeatherKind, val day: Boolean, val high: Int? = null, val low: Int? = null,
+    val readAt: Long = 0L,
+)
 
 /**
  * The weather beside the home clock, from Open-Meteo: no key, reachable from China. The place is
@@ -40,15 +43,26 @@ data class WeatherNow(val celsius: Int, val kind: WeatherKind, val day: Boolean,
 object Weather {
     private const val TAG = "AerialWeather"
     private const val PREFS = "weather"
-    private const val REFRESH_MS = 60 * 60 * 1000L
+    private const val HOUR_MS = 60 * 60 * 1000L
+    private const val REFRESH_MS = HOUR_MS
     private const val RETRY_MS = 3 * 60 * 1000L
-    private const val RELOCATE_MS = 24 * 60 * 60 * 1000L
-    /** A reading older than this is not shown at all. */
-    private const val STALE_MS = 3 * 60 * 60 * 1000L
+    private const val RELOCATE_MS = 24 * HOUR_MS
+    private const val STALE_MS = 3 * HOUR_MS
+    private const val KEEP_MS = 12 * HOUR_MS
     /** Stands for "no high or low" in the prefs. */
     private const val NONE = Int.MIN_VALUE
 
-    var now by mutableStateOf<WeatherNow?>(null); private set
+    private var now by mutableStateOf<WeatherNow?>(null)
+
+    fun shown(atMs: Long = System.currentTimeMillis()): WeatherNow? =
+        now?.takeIf { visibleAt(it.readAt, atMs) }
+
+    internal fun visibleAt(readAt: Long, atMs: Long): Boolean = readAt > 0 && atMs - readAt in 0 until KEEP_MS
+
+    fun hoursOld(reading: WeatherNow, atMs: Long): Int? =
+        if (visibleAt(reading.readAt, atMs) && atMs - reading.readAt >= STALE_MS) {
+            ((atMs - reading.readAt) / HOUR_MS).toInt()
+        } else null
 
     /** Where the weather is for, as a name to show; null until known. */
     var place by mutableStateOf<String?>(null); private set
@@ -72,12 +86,14 @@ object Weather {
         prefs = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         place = prefs.getString("place", null)
         chosen = prefs.getBoolean("chosen", false)
-        if (System.currentTimeMillis() - prefs.getLong("fetched_at", 0) < STALE_MS) {
+        val readAt = prefs.getLong("fetched_at", 0)
+        if (visibleAt(readAt, System.currentTimeMillis())) {
             val kind = runCatching { WeatherKind.valueOf(prefs.getString("kind", null) ?: "") }.getOrNull()
             if (kind != null) now = WeatherNow(
                 prefs.getInt("celsius", 0), kind, prefs.getBoolean("day", true),
                 high = prefs.getInt("high", NONE).takeIf { it != NONE },
                 low = prefs.getInt("low", NONE).takeIf { it != NONE },
+                readAt = readAt,
             )
         }
     }
@@ -125,9 +141,10 @@ object Weather {
             prefs.getString("place", null)?.let { place = it }
             failures = if (reading == null) (failures + 1).coerceAtMost(6) else 0
             if (reading != null) {
-                now = reading
+                val readAt = System.currentTimeMillis()
+                now = reading.copy(readAt = readAt)
                 prefs.edit {
-                    putLong("fetched_at", System.currentTimeMillis())
+                    putLong("fetched_at", readAt)
                     putInt("celsius", reading.celsius)
                     putString("kind", reading.kind.name)
                     putBoolean("day", reading.day)

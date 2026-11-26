@@ -65,19 +65,21 @@ private const val POLL_QUIET_MS = 400L
 
 sealed interface Overlay {
     data object None : Overlay
-    data class ControlCenter(val page: CcPage = CcPage.Main) : Overlay
+    data class ControlCenter(val page: CcPage = CcPage.Main, val focus: CcFocus? = null) : Overlay
     data class SelfCheck(val test: SelfCheckTest) : Overlay
     /** [inFolder]: the menu was opened inside that folder, and closes back to it. */
     data class AppMenu(val key: String, val anchor: Rect, val inFolder: String? = null) : Overlay
     data class Folder(val id: String) : Overlay
     data object HiddenApps : Overlay
-    data object Wallpaper : Overlay
+    data class Wallpaper(val focusHiddenApps: Boolean = false) : Overlay
     data class Pin(val mode: PinMode, val onDone: () -> Unit) : Overlay
     /** Setting up Kids and Elders mode (Restricted), from Personalize. */
     data object Kids : Overlay
 }
 
 enum class CcPage { Main, Inputs, InputSettings, Scenes, SceneEdit, SceneSources, Themes, ThemeManage, Plugins, Update, Setup, SelfCheck, NetworkCheck }
+
+enum class CcFocus { Themes, Personalize, InputSettings }
 
 enum class SelfCheckTest { Picture, Remote }
 
@@ -96,7 +98,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     val homeThemes = HomeThemes(app)
     internal val themePlugins = ThemePlugins.of(app)
     private val phoneApplyTheme: (String) -> Boolean = { id -> applyThemePlugin(id, closePanel = false) }
-    var themeReturnPage = CcPage.Main; private set
+    private var themeReturnPage = CcPage.Main
     private var store = LayoutStore(app, desktopScenes.active)
     private var all: List<AppEntry> = emptyList()
 
@@ -492,6 +494,10 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         if (!loaded || Restricted.active) return
         themeReturnPage = from
         overlay = Overlay.ControlCenter(CcPage.Themes)
+    }
+
+    fun closeThemes() {
+        overlay = Overlay.ControlCenter(themeReturnPage, focus = CcFocus.Themes)
     }
 
     internal fun applyThemePlugin(id: String, closePanel: Boolean = true): Boolean {

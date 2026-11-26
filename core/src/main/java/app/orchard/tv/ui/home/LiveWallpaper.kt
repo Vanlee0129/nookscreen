@@ -398,8 +398,11 @@ fun LiveWallpaper(
         val at = p.currentPosition
         val started = android.os.SystemClock.elapsedRealtime()
         val frame = withTimeoutOrNull(LEAVE_FRAME_MS) {
-            (if (pixelCopy == false) null else surface?.let { capture(it) })
-                ?: reader.frame(film, at, Wallpapers.screenW, Wallpapers.screenH, exact = false, nearest = true)
+            (if (pixelCopy == false) null else surface?.let { capture(it) }) ?: if (FilmFrames.inAppOnly) {
+                reader.keyFrameInApp(film, at, Wallpapers.screenW, Wallpapers.screenH)
+            } else {
+                reader.frame(film, at, Wallpapers.screenW, Wallpapers.screenH, exact = false, nearest = true)
+            }
         }
         if (frame == null) {
             // The picture as it was, of an earlier moment, rather than black; it catches up behind
@@ -425,9 +428,10 @@ fun LiveWallpaper(
     LaunchedEffect(live.film, play, showing) {
         val id = live.film?.id ?: return@LaunchedEffect
         if (!play || !showing) return@LaunchedEffect
-        if (pixelCopy == false && glassFrames) reader.open(id)
+        if (pixelCopy == false && glassFrames && !fileFramesShut(context)) reader.open(id)
         // Under the screensaver no plate shows: a frame only so the glass is at hand where it stops.
-        sampleGlass({ player }, every = { if (inSaver) SAVER_GLASS_EVERY_MS else if (fileFramesShut(context)) IN_APP_GLASS_EVERY_MS else GLASS_EVERY_MS }) { at ->
+        sampleGlass({ player }, canTake = { !FilmFrames.inAppOnly },
+            every = { if (inSaver) SAVER_GLASS_EVERY_MS else if (fileFramesShut(context)) IN_APP_GLASS_EVERY_MS else GLASS_EVERY_MS }) { at ->
             val frame = surface?.let { copyGlass(it) }
                 ?: when {
                     pixelCopy == true -> null
@@ -510,8 +514,8 @@ fun LiveWallpaper(
                 // is back with the apps; then the exact frame, which looks just like the paused film.
                 val film = p.currentMediaItem?.mediaId
                 val at = p.currentPosition
-                val w = surface?.width ?: Wallpapers.screenW
-                val h = surface?.height ?: Wallpapers.screenH
+                val w = surface?.width?.takeIf { it > 0 } ?: Wallpapers.screenW
+                val h = surface?.height?.takeIf { it > 0 } ?: Wallpapers.screenH
                 p.videoDecoderCounters?.let { DiagLog.i("wallpaper film dropped ${it.droppedBufferCount} of ${it.renderedOutputBufferCount + it.droppedBufferCount} frames") }
                 val before = Wallpapers.frosted
                 // Any frame of the same shot will do: an aerial moves slowly, and frosted, seconds
@@ -530,15 +534,19 @@ fun LiveWallpaper(
                     // MiTV-MFTR0). An open panel keeps the glass it opened with (liquidGlass), so
                     // nothing waits on it there; the grid's glass does, and the grid has no wait.
                     if (panelNow) delay(PANEL_IN_MS)
-                    if (!live.stopped) reader.frame(film, at, 320, 180, exact = false)?.let {
-                        Wallpapers.useLiveFrost(it)
-                        glassReady(live)
+                    if (fileFramesShut(context)) {
+                        // Use the nearest software-decoded frame when no safe copy is available.
+                        // TCL MT5879 still takes its exact frame after the idle wait below.
+                        if (FilmFrames.inAppOnly || !copySlow) frame = reader.keyFrameInApp(film, at, w, h)
+                    } else {
+                        if (!live.stopped) reader.frame(film, at, 320, 180, exact = false)?.let {
+                            Wallpapers.useLiveFrost(it)
+                            glassReady(live)
+                        }
+                        // The exact frame can time out on MFTR0; the nearest key frame is quicker.
+                        frame = reader.frame(film, at, w, h, exact = true)
+                            ?: reader.frame(film, at, w, h, exact = false, nearest = true)
                     }
-                    // The exact frame is decoded from the key frame before it, reading that whole
-                    // stretch of file while the paused player still fills its buffer; on MFTR0 that
-                    // timed out at times. The nearest key frame alone is a second or so off at most.
-                    frame = reader.frame(film, at, w, h, exact = true)
-                        ?: reader.frame(film, at, w, h, exact = false, nearest = true)
                     if (frame == null && live.stopped) Wallpapers.restoreFrost(before)
                 }
                 if (frame != null) {
@@ -565,7 +573,7 @@ fun LiveWallpaper(
                     }
                     DiagLog.i("wallpaper picture takes over from the stopped film")
                     cover.animateTo(0f, tween(320, easing = Motion.EaseOut))
-                } else if (copySlow && film != null) {
+                } else if (copySlow && !FilmFrames.inAppOnly && film != null) {
                     // PixelCopy reads the film but holds Home 0.6-1.7 s, and the film's file jams
                     // the media server (TCL MT5879, FrameReader). The paused film stays while Home
                     // shows it plainly; once no key has come for KEEP_STOPPED_MS, the copy is made,
@@ -730,12 +738,16 @@ private var pixelCopy: Boolean? = null
 
 /**
  * Whether reading frames from a film's file can jam the media server here: TCL's own MP4 extractor
- * (see FilmFrames.tclExtractor), whatever PixelCopy did. Reads a library once per firmware: call it
- * off the main thread.
+ * (see FilmFrames.tclExtractor), whatever PixelCopy did, or the Amlogic video path. The first check
+ * reads firmware files; call it off the main thread.
  */
 internal fun fileFramesJam(context: android.content.Context): Boolean {
+    return softwareWallpaperFramesOnly(context) || FilmFrames.tclExtractor(context)
+}
+
+internal fun softwareWallpaperFramesOnly(context: android.content.Context): Boolean {
     FilmFrames.load(context)
-    return FilmFrames.tclExtractor(context)
+    return FilmFrames.inAppOnly
 }
 
 /**
@@ -746,7 +758,7 @@ internal fun fileFramesJam(context: android.content.Context): Boolean {
 internal fun filmGlassReport(context: android.content.Context): String {
     FilmFrames.load(context)
     return "copy=${pixelCopy ?: "untried"} copy_slow=$copySlow copy_crashed=${FilmFrames.copyCrashed} tcl_extractor=${FilmFrames.tclExtractor(context)} " +
-        "file_stuck=${FileFramesStuck.now(context)} glassless=${Wallpapers.filmGlassless}"
+        "file_stuck=${FileFramesStuck.now(context)} in_app_only=${FilmFrames.inAppOnly} glassless=${Wallpapers.filmGlassless}"
 }
 
 /**
@@ -889,7 +901,7 @@ private suspend fun captureOnce(view: SurfaceView, w: Int = view.width, h: Int =
     val result: Int = withContext(Dispatchers.IO) {
         // A copy that once took the whole process down is not asked again (FilmFrames.copyCrashed).
         FilmFrames.load(view.context)
-        if (FilmFrames.copyCrashed) return@withContext null
+        if (FilmFrames.copyCrashed || FilmFrames.inAppOnly) return@withContext null
         FilmFrames.copyStarting()
         try {
             suspendCancellableCoroutine<Int> { done ->
@@ -1018,6 +1030,7 @@ private class FrameReader(private val context: android.content.Context) {
 
     /** Opens [id] ahead, unless it is open already. */
     suspend fun open(id: String) {
+        if (fileFramesShut(context)) return
         onWorker("open") { retrieverFor(it, id) }
     }
 
@@ -1203,6 +1216,7 @@ private const val DECODE_TIMEOUT_MS = 10_000L
 private object FilmFrames {
     @Volatile private var app: android.content.Context? = null
 
+    @Synchronized
     fun load(context: android.content.Context) {
         if (app != null) return
         val c = context.applicationContext
@@ -1221,7 +1235,33 @@ private object FilmFrames {
             copyCrashed = true
             pixelCopy = false
         }
+        inAppOnly = amlogicDecoder(c)
+        if (inAppOnly) pixelCopy = false
         update()
+    }
+
+    /** Redmi A85 Pro and Hisense T963D4 stall the video path when capturing a frame (#1759). */
+    @Volatile var inAppOnly = false
+        private set
+
+    private fun amlogicDecoder(context: android.content.Context): Boolean {
+        val prefs = prefs(context)
+        val known = prefs.getString(AMLOGIC_KEY, null)
+        if (known?.substringBeforeLast('|') == Build.FINGERPRINT) return known.endsWith("|true")
+        // Read the firmware's codec lists without querying the media service we need to avoid.
+        val directories = listOf("/vendor/etc", "/odm/etc", "/system/etc", "/system/vendor/etc")
+        val lists = directories.flatMap { directory ->
+            runCatching {
+                java.io.File(directory).listFiles { file -> file.name.startsWith("media_codecs") && file.extension == "xml" }
+                    .orEmpty().asList()
+            }.getOrDefault(emptyList())
+        }.distinct()
+        val found = lists.any { list ->
+            runCatching { containsAscii(list, "OMX.amlogic.") || containsAscii(list, "c2.amlogic.") }.getOrDefault(false)
+        }
+        prefs.edit().putString(AMLOGIC_KEY, "${Build.FINGERPRINT}|$found").apply()
+        DiagLog.i("wallpaper film: checked ${lists.size} codec lists, Amlogic decoder=$found")
+        return found
     }
 
     /**
@@ -1303,16 +1343,15 @@ private object FilmFrames {
     private const val CRASHED_KEY = "copy_crashed"
     // A new key: before 1.94 Android 6-8 were read in the wrong place and kept as TCL's.
     private const val TCL_KEY = "tcl_extractor_lib"
+    private const val AMLOGIC_KEY = "amlogic_decoder"
 }
 
 /**
- * Whether the film's file is not read here: PixelCopy reads the film but slowly on a TV whose
- * media server would jam on the file (FilmFrames.tclExtractor), or a frame of it has stuck since
- * the TV started (FileFramesStuck). The plate and panels then go without the film's frames
- * (Wallpapers.filmGlassless).
+ * Whether to avoid the system retriever: Amlogic, a slow copy with TCL's extractor, or a retriever
+ * that has already stalled or refused the file. The plate and panels use the fallback glass.
  */
 private fun fileFramesShut(context: android.content.Context): Boolean =
-    (copySlow && FilmFrames.tclExtractor(context)) || FileFramesStuck.now(context) || FilmFrames.retrieverRefused
+    FilmFrames.inAppOnly || (copySlow && FilmFrames.tclExtractor(context)) || FileFramesStuck.now(context) || FilmFrames.retrieverRefused
 
 /** Whether [file] holds the ASCII text [text], read in pieces. */
 private fun containsAscii(file: java.io.File, text: String): Boolean {
